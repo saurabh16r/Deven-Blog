@@ -14,7 +14,7 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
-  title: "FounderBrief - The smartest startup insights in 5 minutes",
+  title: "Deven - The smartest startup insights in 5 minutes",
   description: "Actionable startup breakdowns, AI trends, growth strategies, fundraising lessons, and founder stories delivered weekly.",
 };
 

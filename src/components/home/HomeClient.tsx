@@ -85,84 +85,138 @@ export default function HomeClient({ initialBlogs, initialCategories }: HomeClie
     }
   };
 
+  const handleCTAClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const element = document.getElementById('newsletter-section');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-16 sm:pb-24 border-b border-border bg-gradient-to-b from-primary/5 via-transparent to-transparent">
-        {/* Editorial Grid Backing */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+      <section 
+        className="relative overflow-hidden min-h-[92vh] flex items-center -mt-16 sm:-mt-20 bg-black bg-cover bg-center"
+        style={{ backgroundImage: `url('/founder_hero_bg.png')` }}
+      >
+        {/* Dark Cinematic Gradient Overlay */}
+        <div 
+          className="absolute inset-0 z-0 pointer-events-none"
+          style={{
+            background: `linear-gradient(
+              90deg,
+              rgba(0,0,0,0.92) 0%,
+              rgba(0,0,0,0.80) 35%,
+              rgba(0,0,0,0.50) 70%,
+              rgba(0,0,0,0.20) 100%
+            )`
+          }}
+        />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8 z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="space-y-4"
-          >
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold tracking-widest bg-primary/10 text-primary uppercase border border-primary/20">
-              ✦ Startup Media Platform
-            </span>
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-sans font-extrabold tracking-tight leading-none text-foreground max-w-4xl mx-auto">
-              The smartest startup insights in <span className="text-primary underline decoration-primary decoration-wavy underline-offset-8">5 minutes</span>.
-            </h1>
-            <p className="text-muted-foreground text-base sm:text-xl max-w-2xl mx-auto leading-relaxed">
+        {/* Hero Content Wrapper */}
+        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 sm:pt-36 pb-16 sm:pb-24 z-10">
+          <div className="max-w-[600px] flex flex-col justify-center text-left space-y-8">
+            
+            {/* Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="text-[42px] sm:text-[56px] md:text-[72px] lg:text-[84px] font-sans font-black tracking-tight leading-[0.95] text-white"
+            >
+              The Smartest Startup <br className="hidden sm:inline" />
+              Insights, <br />
+              <span className="text-[#FFC247]">In Just 5 Minutes.</span>
+            </motion.h1>
+
+            {/* Description */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+              className="text-[#D1D5DB] text-lg sm:text-[20px] leading-[1.7] max-w-[520px] font-medium"
+            >
               Actionable startup breakdowns, AI trends, growth strategies, fundraising lessons, and founder stories delivered weekly.
-            </p>
-          </motion.div>
+            </motion.p>
 
-          {/* Hero Form */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            className="max-w-md mx-auto space-y-3"
-          >
-            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-2.5">
-              <input
-                type="email"
-                placeholder="Enter your email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="flex-1 bg-background/80 border border-border rounded-lg px-4 py-3 text-sm focus:outline-hidden focus:border-primary focus:ring-1 focus:ring-primary shadow-xs"
-              />
-              <button
-                type="submit"
-                disabled={status === 'loading'}
-                className="bg-primary text-black font-extrabold text-sm px-6 py-3 rounded-lg hover:bg-primary/95 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            {/* CTA Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
+            >
+              <a
+                href="#newsletter-section"
+                onClick={handleCTAClick}
+                className="inline-flex items-center justify-center px-8 py-4 text-base font-extrabold bg-[#FFC247] text-black hover:bg-[#FFC247]/90 transition-all rounded-lg shadow-lg hover:scale-[1.02] active:scale-[0.98] duration-200 cursor-pointer text-center"
               >
-                {status === 'loading' ? 'Subscribing...' : 'Get Weekly Insights'}
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </form>
+                Get Weekly Insights
+              </a>
+              <a
+                href="#categories"
+                className="inline-flex items-center justify-center px-8 py-4 text-base font-extrabold bg-white text-black hover:bg-white/90 transition-all rounded-lg shadow-md hover:scale-[1.02] active:scale-[0.98] duration-200 cursor-pointer border border-neutral-200 text-center"
+              >
+                Explore Articles
+              </a>
+            </motion.div>
 
-            {status === 'success' && (
-              <p className="text-sm text-green-500 font-bold flex items-center justify-center gap-1">
-                <Check className="h-4 w-4" /> {message}
-              </p>
-            )}
-            {status === 'error' && (
-              <p className="text-sm text-red-500 font-bold">{message}</p>
-            )}
+            {/* Trust Indicator */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.7, delay: 0.35 }}
+              className="flex items-center space-x-2 text-sm text-neutral-400 font-medium"
+            >
+              <span className="text-[#FFC247] font-bold">✓</span>
+              <span>No spam. Unsubscribe anytime.</span>
+            </motion.div>
 
-            <p className="text-xs text-muted-foreground">
-              No spam. Unsubscribe anytime.
-            </p>
-          </motion.div>
+          </div>
+        </div>
+      </section>
 
-          {/* Social Proof */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="pt-6 border-t border-border/40 max-w-lg mx-auto"
-          >
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Join founders, operators, marketers, and creators building the future.
-            </p>
-          </motion.div>
+      {/* Trust Logos Section */}
+      <section className="bg-white border-b border-border py-8 sm:py-10 flex items-center justify-center min-h-[120px] sm:min-h-[140px] z-10 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full text-center space-y-5">
+          <p className="text-xs uppercase font-extrabold tracking-wider text-slate-500">
+            Trusted by founders, operators, and teams at
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 md:gap-x-16">
+            {/* Stripe */}
+            <div className="text-slate-900 opacity-40 hover:opacity-85 transition-all duration-300 select-none">
+              <svg className="h-5 sm:h-6 text-current" viewBox="0 0 60 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M59.64 14.37c0-5.78-2.82-9.76-8.22-9.76-5.46 0-8.88 4.22-8.88 9.87 0 6.64 4.02 9.87 9.4 9.87 4.22 0 7.37-1.95 8.78-4.7l-3.23-1.7c-.96 1.48-2.6 2.4-5.32 2.4-3.15 0-5.28-1.57-5.58-4.32h14.88c.1-.88.17-1.42.17-1.66zm-13.06-2.1c0-2.3 1.54-3.78 3.75-3.78 2.14 0 3.53 1.48 3.53 3.78H46.58zM31.25 4.95c-2.38 0-4.04 1.13-4.8 2.2V.4h-4.32v23.4h4.32v-8.88c.8 1.17 2.42 2.16 4.7 2.16 4.22 0 7.85-3.24 7.85-8.52-.02-5.44-3.53-8.6-7.75-8.6zm-1.04 12.87c-2.48 0-4.06-1.78-4.06-4.52s1.58-4.5 4.06-4.5c2.44 0 4.02 1.76 4.02 4.5s-1.58 4.52-4.02 4.52zM17.37 8.7V5.2h-3.92V.68l-4.3 1.34v3.18H6.5v3.5h2.65v10c0 3.32 1.83 5.1 5.08 5.1 1.63 0 2.94-.36 3.65-.77l-1.06-3.22c-.44.22-.98.34-1.74.34-1.48 0-2.16-.76-2.16-2.38V8.7h4.45zM2.87 8.35c0-1.28 1.03-1.8 2.82-1.8 1.94 0 3.54.54 4.53 1.12V4.28c-1.12-.42-2.73-.68-4.57-.68-4.48 0-7.23 2.24-7.23 6.13 0 5.63 7.74 4.72 7.74 7.15 0 1.44-1.25 1.9-3.07 1.9-2.26 0-4.22-.76-5.48-1.55v3.66c1.4.67 3.35.97 5.25.97 4.67 0 7.73-2.2 7.73-6.14 0-5.83-7.73-4.82-7.73-7.38z" fill="currentColor"/>
+              </svg>
+            </div>
+            {/* Notion */}
+            <div className="text-slate-900 opacity-40 hover:opacity-85 transition-all duration-300 select-none flex items-center space-x-1.5 font-black text-lg sm:text-xl font-sans tracking-tight">
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
+                <path d="M7 7v10M7 7l5 5 5-5M17 7v10" />
+              </svg>
+              <span>Notion</span>
+            </div>
+            {/* Linear */}
+            <div className="text-slate-900 opacity-40 hover:opacity-85 transition-all duration-300 select-none flex items-center space-x-1.5 font-extrabold text-lg sm:text-xl font-sans tracking-tight">
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5" />
+                <polygon points="12 6.5 17.5 10 17.5 14 12 17.5 6.5 14 6.5 10" />
+              </svg>
+              <span>Linear</span>
+            </div>
+            {/* Reforge */}
+            <div className="text-slate-900 opacity-40 hover:opacity-85 transition-all duration-300 select-none font-bold text-base sm:text-lg tracking-wider font-sans">
+              REFORGE
+            </div>
+            {/* Deel */}
+            <div className="text-slate-900 opacity-40 hover:opacity-85 transition-all duration-300 select-none font-sans font-black text-xl sm:text-2xl tracking-tighter">
+              deel.
+            </div>
+          </div>
         </div>
       </section>
 
@@ -210,10 +264,10 @@ export default function HomeClient({ initialBlogs, initialCategories }: HomeClie
               <div className="pt-4 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="h-8 w-8 bg-primary/20 rounded-full flex items-center justify-center font-bold text-xs">
-                    FB
+                    D
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-foreground">FounderBrief Editorial</p>
+                    <p className="text-xs font-bold text-foreground">Deven Editorial</p>
                     <p className="text-[10px] text-muted-foreground">Weekly Contributor</p>
                   </div>
                 </div>

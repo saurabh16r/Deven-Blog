@@ -115,7 +115,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 pt-4 border-y border-border py-4 text-xs sm:text-sm text-muted-foreground">
               <span className="flex items-center space-x-1.5 font-semibold text-foreground">
                 <User className="h-4 w-4" />
-                <span>FounderBrief Editorial</span>
+                <span>Deven Editorial</span>
               </span>
               <span className="flex items-center space-x-1.5">
                 <Calendar className="h-4 w-4" />

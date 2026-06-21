@@ -33,17 +33,17 @@ export default function Footer() {
   };
 
   return (
-    <footer id="footer" className="bg-surface text-foreground border-t border-border mt-auto">
+    <footer id="about" className="bg-surface text-foreground border-t border-border mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 sm:gap-12">
           {/* Brand Info */}
           <div className="space-y-4 md:col-span-2">
             <div className="flex items-center space-x-2">
               <span className="h-8 w-8 rounded-lg bg-primary text-black flex items-center justify-center font-bold text-lg shadow-sm">
-                F
+                D
               </span>
-              <span className="font-sans font-extrabold text-xl tracking-tight">
-                Founder<span className="text-primary">Brief</span>
+              <span className="font-sans font-extrabold text-xl tracking-tight text-foreground">
+                Deven<span className="text-primary">.</span>
               </span>
             </div>
             <p className="text-muted-foreground text-sm max-w-sm">

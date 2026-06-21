@@ -52,13 +52,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Sidebar Header Logo */}
           <div className="h-16 flex items-center justify-between px-6 border-b border-border shrink-0">
             <Link href="/" className="flex items-center space-x-2">
-              <span className="h-7 w-7 rounded-lg bg-primary text-black flex items-center justify-center font-bold text-sm shadow-sm">
-                F
+              <span className="h-7 w-7 rounded-lg bg-primary text-black flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
+                D
               </span>
               <span className="font-sans font-extrabold text-lg tracking-tight">
-                Founder<span className="text-primary font-bold">Brief</span>
+                Deven<span className="text-primary font-bold">.</span>
               </span>
-              <span className="text-[9px] font-extrabold bg-primary/10 border border-primary/20 text-primary px-1.5 py-0.5 rounded-sm uppercase tracking-wider ml-1">
+              <span className="text-[9px] font-extrabold bg-primary/10 border border-primary/20 text-primary px-1.5 py-0.5 rounded-sm uppercase tracking-wider ml-1 shrink-0">
                 Admin
               </span>
             </Link>
@@ -126,7 +126,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Menu className="h-6 w-6" />
           </button>
           <span className="font-sans font-extrabold text-sm tracking-tight text-foreground">
-            FounderBrief Admin Portal
+            Deven Admin Portal
           </span>
           <div className="w-8" /> {/* Spacer */}
         </header>
