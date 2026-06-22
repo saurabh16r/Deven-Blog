@@ -1,7 +1,6 @@
 import { MetadataRoute } from 'next';
 import connectDB from '@/lib/db';
 import { Blog } from '@/lib/models';
-import { mockBlogs } from '@/app/api/blogs/route';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://founderbrief.com';
@@ -11,8 +10,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     await connectDB();
     const dbBlogs = await Blog.find({ published: true }).select('slug updatedAt').lean();
     blogs = JSON.parse(JSON.stringify(dbBlogs));
-  } catch {
-    blogs = mockBlogs.filter(b => b.published);
+  } catch (error) {
+    console.error('Database connection failed in sitemap generation:', error);
   }
 
   const blogUrls = blogs.map((blog: any) => ({

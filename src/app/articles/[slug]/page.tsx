@@ -2,7 +2,6 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import connectDB from '@/lib/db';
 import { Blog } from '@/lib/models';
-import { mockBlogs } from '@/app/api/blogs/route';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import ReadingProgressBar from '@/components/blog/ReadingProgressBar';
@@ -34,54 +33,38 @@ export default async function ArticleDetailPage({ params }: PageProps) {
   let blog: any = null;
   let relatedArticles: any[] = [];
 
-  try {
-    await connectDB();
-    
-    // Find blog and increment views by 1
-    const dbBlog = await Blog.findOneAndUpdate(
-      { slug, published: true },
-      { $inc: { views: 1 } },
-      { returnDocument: 'after' }
-    ).lean();
+  await connectDB();
+  
+  // Find blog and increment views by 1
+  const dbBlog = await Blog.findOneAndUpdate(
+    { slug, published: true },
+    { $inc: { views: 1 } },
+    { returnDocument: 'after' }
+  ).lean();
 
-    if (dbBlog) {
-      blog = JSON.parse(JSON.stringify(dbBlog));
-      
-      const dbRelated = await Blog.find({
+  if (dbBlog) {
+    blog = JSON.parse(JSON.stringify(dbBlog));
+    
+    const dbRelated = await Blog.find({
+      published: true,
+      slug: { $ne: slug },
+      category: blog.category
+    })
+    .limit(3)
+    .lean();
+
+    relatedArticles = JSON.parse(JSON.stringify(dbRelated));
+
+    // Fallback if not enough category matches
+    if (relatedArticles.length < 3) {
+      const extraRelated = await Blog.find({
         published: true,
         slug: { $ne: slug },
-        category: blog.category
+        category: { $ne: blog.category }
       })
-      .limit(3)
+      .limit(3 - relatedArticles.length)
       .lean();
-
-      relatedArticles = JSON.parse(JSON.stringify(dbRelated));
-
-      // Fallback if not enough category matches
-      if (relatedArticles.length < 3) {
-        const extraRelated = await Blog.find({
-          published: true,
-          slug: { $ne: slug },
-          category: { $ne: blog.category }
-        })
-        .limit(3 - relatedArticles.length)
-        .lean();
-        relatedArticles = [...relatedArticles, ...JSON.parse(JSON.stringify(extraRelated))];
-      }
-    }
-  } catch (error) {
-    console.warn('Database error in article details, falling back to mock dataset', error);
-    const mockBlogIndex = mockBlogs.findIndex(b => b.slug === slug && b.published);
-    if (mockBlogIndex !== -1) {
-      mockBlogs[mockBlogIndex].views += 1;
-      blog = JSON.parse(JSON.stringify(mockBlogs[mockBlogIndex]));
-      
-      const mockRelated = mockBlogs
-        .filter(b => b.published && b.slug !== slug)
-        .sort((a, b) => (a.category === blog.category ? -1 : 1))
-        .slice(0, 3);
-        
-      relatedArticles = JSON.parse(JSON.stringify(mockRelated));
+      relatedArticles = [...relatedArticles, ...JSON.parse(JSON.stringify(extraRelated))];
     }
   }
 

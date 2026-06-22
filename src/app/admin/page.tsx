@@ -1,7 +1,6 @@
 import React from 'react';
 import connectDB from '@/lib/db';
 import { Blog, Subscriber } from '@/lib/models';
-import { mockBlogs } from '@/app/api/blogs/route';
 import { FileText, Users, Eye, ArrowUpRight, TrendingUp, Settings } from 'lucide-react';
 import Link from 'next/link';
 
@@ -17,62 +16,29 @@ export default async function AdminDashboardPage() {
   let recentActivity: any[] = [];
   let recentSubs: any[] = [];
 
-  try {
-    await connectDB();
-    const blogCount = await Blog.countDocuments();
-    const subCount = await Subscriber.countDocuments();
-    const publishedCount = await Blog.countDocuments({ published: true });
-    
-    // Sum views
-    const viewStats = await Blog.aggregate([
-      { $group: { _id: null, totalViews: { $sum: '$views' } } }
-    ]);
-    const totalViews = viewStats[0]?.totalViews || 0;
+  await connectDB();
+  const blogCount = await Blog.countDocuments();
+  const subCount = await Subscriber.countDocuments();
+  const publishedCount = await Blog.countDocuments({ published: true });
+  
+  // Sum views
+  const viewStats = await Blog.aggregate([
+    { $group: { _id: null, totalViews: { $sum: '$views' } } }
+  ]);
+  const totalViews = viewStats[0]?.totalViews || 0;
 
-    stats = {
-      totalBlogs: blogCount,
-      totalSubscribers: subCount,
-      totalViews,
-      publishedCount
-    };
+  stats = {
+    totalBlogs: blogCount,
+    totalSubscribers: subCount,
+    totalViews,
+    publishedCount
+  };
 
-    const latestBlogs = await Blog.find().sort({ createdAt: -1 }).limit(4).lean();
-    recentActivity = JSON.parse(JSON.stringify(latestBlogs));
+  const latestBlogs = await Blog.find().sort({ createdAt: -1 }).limit(4).lean();
+  recentActivity = JSON.parse(JSON.stringify(latestBlogs));
 
-    const latestSubs = await Subscriber.find().sort({ subscribedAt: -1 }).limit(4).lean();
-    recentSubs = JSON.parse(JSON.stringify(latestSubs));
-  } catch (error) {
-    console.warn('Database connection failed in admin dashboard page, using fallback mock stats.', error);
-    // Calculate stats from mock data
-    const totalViews = mockBlogs.reduce((acc, curr) => acc + curr.views, 0);
-    stats = {
-      totalBlogs: mockBlogs.length,
-      totalSubscribers: 1258,
-      totalViews,
-      publishedCount: mockBlogs.filter(b => b.published).length
-    };
-
-    recentActivity = JSON.parse(JSON.stringify(mockBlogs.slice(0, 4)));
-    recentSubs = [
-      { _id: '1', email: 'justin@stripe.com', subscribedAt: new Date('2026-06-21T09:30:00Z') },
-      { _id: '2', email: 'shreyas@notion.so', subscribedAt: new Date('2026-06-21T08:15:00Z') },
-      { _id: '3', email: 'gaby@linear.app', subscribedAt: new Date('2026-06-20T17:45:00Z') },
-      { _id: '4', email: 'packy@morningbrew.com', subscribedAt: new Date('2026-06-20T12:00:00Z') }
-    ];
-  }
-
-  // Fallback for empty databases
-  if (recentActivity.length === 0) {
-    recentActivity = JSON.parse(JSON.stringify(mockBlogs.slice(0, 4)));
-  }
-  if (recentSubs.length === 0) {
-    recentSubs = [
-      { _id: '1', email: 'justin@stripe.com', subscribedAt: new Date('2026-06-21T09:30:00Z') },
-      { _id: '2', email: 'shreyas@notion.so', subscribedAt: new Date('2026-06-21T08:15:00Z') },
-      { _id: '3', email: 'gaby@linear.app', subscribedAt: new Date('2026-06-20T17:45:00Z') },
-      { _id: '4', email: 'packy@morningbrew.com', subscribedAt: new Date('2026-06-20T12:00:00Z') }
-    ];
-  }
+  const latestSubs = await Subscriber.find().sort({ subscribedAt: -1 }).limit(4).lean();
+  recentSubs = JSON.parse(JSON.stringify(latestSubs));
 
   // Pre-calculated premium SVG charts dimensions
   // Graph 1: Subscriber Growth (Line Chart)
