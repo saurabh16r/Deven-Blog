@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateSummary } from '@/lib/openai';
+import { generateSummary } from '@/lib/gemini';
 import connectDB from '@/lib/db';
 import { Blog } from '@/lib/models';
 

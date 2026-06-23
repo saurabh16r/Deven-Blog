@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import { Blog } from '@/lib/models';
+import { generateSummary } from '@/lib/gemini';
 
 export async function GET() {
   try {
@@ -21,7 +22,18 @@ export async function PUT(req: NextRequest) {
     if (action && Array.isArray(ids)) {
       await connectDB();
       if (action === 'publish') {
-        await Blog.updateMany({ _id: { $in: ids } }, { published: true });
+        const blogsToPublish = await Blog.find({ _id: { $in: ids } });
+        for (const blogToPub of blogsToPublish) {
+          let aiSummary = blogToPub.aiSummary;
+          if (blogToPub.aiSummaryEnabled !== false && !aiSummary) {
+            try {
+              aiSummary = await generateSummary(blogToPub.title, blogToPub.content);
+            } catch (err) {
+              console.error(`Failed to generate summary for blog ${blogToPub._id} during bulk publish:`, err);
+            }
+          }
+          await Blog.findByIdAndUpdate(blogToPub._id, { published: true, aiSummary });
+        }
       } else if (action === 'unpublish') {
         await Blog.updateMany({ _id: { $in: ids } }, { published: false });
       } else if (action === 'delete') {
@@ -36,6 +48,23 @@ export async function PUT(req: NextRequest) {
     }
 
     await connectDB();
+
+    // Auto-generate summary on publish if enabled and not already provided
+    if (updateData.published && updateData.aiSummaryEnabled !== false && !updateData.aiSummary) {
+      const existing = await Blog.findById(id);
+      if (existing) {
+        const title = updateData.title || existing.title;
+        const content = updateData.content || existing.content;
+        if (title && content) {
+          try {
+            updateData.aiSummary = await generateSummary(title, content);
+          } catch (err) {
+            console.error(`Failed to auto-generate summary for blog ${id} during publish:`, err);
+          }
+        }
+      }
+    }
+
     const updatedBlog = await Blog.findByIdAndUpdate(id, updateData, { new: true });
     if (!updatedBlog) {
       return NextResponse.json({ error: 'Blog post not found' }, { status: 404 });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import { Blog } from '@/lib/models';
+import { generateSummary } from '@/lib/gemini';
 
 export async function GET(req: NextRequest) {
   try {
@@ -50,6 +51,16 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    
+    // Auto-generate summary on publish if enabled and not already provided
+    if (body.published && body.aiSummaryEnabled !== false && !body.aiSummary && body.title && body.content) {
+      try {
+        body.aiSummary = await generateSummary(body.title, body.content);
+      } catch (sumErr) {
+        console.error('Failed to auto-generate AI summary during publish:', sumErr);
+      }
+    }
+
     await connectDB();
     const blog = await Blog.create(body);
     return NextResponse.json(blog, { status: 201 });

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadImage, deleteImage } from '@/lib/cloudinary';
+import fs from 'fs';
+import path from 'path';
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,17 +20,40 @@ export async function POST(req: NextRequest) {
     
     try {
       const url = await uploadImage(base64Image);
+      // If Cloudinary returned the base64Image fallback (meaning it's not configured),
+      // throw an error to trigger the local saving fallback instead of storing giant base64 strings in DB.
+      if (url.startsWith('data:')) {
+        throw new Error('Cloudinary not configured');
+      }
       return NextResponse.json({ url });
-    } catch {
-      // If upload fails, create a local object URL simulation (we will return a mockup Unsplash image URL)
-      console.warn('Upload failed or Cloudinary not active. Returning stock image mockup.');
-      const fallbackUrls = [
-        'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
-        'https://images.unsplash.com/photo-1618005198143-e5283b519a7f?auto=format&fit=crop&w=1200&q=80',
-        'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1200&q=80'
-      ];
-      const randomUrl = fallbackUrls[Math.floor(Math.random() * fallbackUrls.length)];
-      return NextResponse.json({ url: randomUrl });
+    } catch (error) {
+      console.warn('Cloudinary upload failed/not-configured, saving file locally under public/uploads/ as fallback:', error);
+      
+      try {
+        const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        
+        // Generate a safe unique filename
+        const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        const filePath = path.join(uploadsDir, safeName);
+        
+        fs.writeFileSync(filePath, buffer);
+        
+        const localUrl = `/uploads/${safeName}`;
+        return NextResponse.json({ url: localUrl });
+      } catch (localError: any) {
+        console.error('Failed to save file locally:', localError);
+        // Fallback to stock image mockup only if local saving also fails
+        const fallbackUrls = [
+          'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
+          'https://images.unsplash.com/photo-1618005198143-e5283b519a7f?auto=format&fit=crop&w=1200&q=80',
+          'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1200&q=80'
+        ];
+        const randomUrl = fallbackUrls[Math.floor(Math.random() * fallbackUrls.length)];
+        return NextResponse.json({ url: randomUrl });
+      }
     }
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

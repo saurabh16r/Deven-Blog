@@ -7,52 +7,6 @@ const isConfigured = !!apiKey;
 const openai = isConfigured ? new OpenAI({ apiKey }) : null;
 
 /**
- * Generate a 5-bullet summary using GPT-4o-mini
- */
-export async function generateSummary(title: string, htmlContent: string): Promise<string> {
-  if (!isConfigured || !openai) {
-    console.warn('OpenAI API key missing. Generating mock summary takeaways.');
-    return [
-      "Key Takeaways",
-      `• FounderBrief delivers concise startup insights in 5 minutes based on "${title}".`,
-      "• Consistently tracking user metrics helps modern businesses iterate rapidly.",
-      "• Automation and AI integration are transforming content discovery for digital brands.",
-      "• Establishing early newsletter relationships creates a defensible community moat.",
-      "• Direct subscriber outreach improves product retention and boosts organic feedback loops."
-    ].join('\n');
-  }
-
-  // Remove HTML tags for prompt safety and size
-  const plainText = htmlContent.replace(/<[^>]*>/g, ' ').substring(0, 4000);
-
-  try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an elite editorial AI assistant. Provide exactly 5 bullet points summarizing the text. Format exactly as: \nKey Takeaways\n• Bullet 1\n• Bullet 2\n• Bullet 3\n• Bullet 4\n• Bullet 5\nDo not add additional headers, intros, or summaries.'
-        },
-        {
-          role: 'user',
-          content: `Title: ${title}\nContent:\n${plainText}`
-        }
-      ],
-      temperature: 0.5,
-    });
-
-    const resultText = response.choices[0]?.message?.content?.trim();
-    if (!resultText) {
-      throw new Error('Empty summary response');
-    }
-    return resultText;
-  } catch (error) {
-    console.error('OpenAI summary error:', error);
-    throw error;
-  }
-}
-
-/**
  * Generate Text-to-Speech audio and return the public URL (or mock URL)
  */
 export async function generateSpeech(title: string, htmlContent: string): Promise<string> {

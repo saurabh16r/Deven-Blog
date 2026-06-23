@@ -26,6 +26,27 @@ async function connectDB() {
 
   try {
     cached.conn = await cached.promise;
+    
+    // Seed default categories if they do not exist
+    try {
+      const Category = (await import('./models/Category')).default;
+      const count = await Category.countDocuments();
+      if (count === 0) {
+        console.log('Seeding default categories...');
+        const defaultCategories = [
+          { name: 'Startups', slug: 'startups' },
+          { name: 'AI', slug: 'ai' },
+          { name: 'Marketing', slug: 'marketing' },
+          { name: 'Fundraising', slug: 'fundraising' },
+          { name: 'Operations', slug: 'operations' },
+          { name: 'Growth', slug: 'growth' }
+        ];
+        await Category.insertMany(defaultCategories);
+        console.log('Seeding default categories completed successfully.');
+      }
+    } catch (seedErr) {
+      console.error('Error seeding default categories:', seedErr);
+    }
   } catch (e) {
     cached.promise = null;
     console.error('Failed to connect to MongoDB', e);
