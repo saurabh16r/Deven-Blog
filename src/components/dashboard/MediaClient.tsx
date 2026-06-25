@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Upload, Copy, Check, Trash2, Search, ImageIcon, AlertCircle } from 'lucide-react';
+import { Upload, Copy, Check, Trash2, Search, ImageIcon } from 'lucide-react';
 
 interface ImageAsset {
   id: string;
@@ -11,7 +11,7 @@ interface ImageAsset {
 }
 
 export default function MediaClient() {
-  // A stock collection of beautiful Unsplash images for media catalog defaults
+  // A stock collection of Unsplash images
   const [images, setImages] = useState<ImageAsset[]>([
     { id: 'img-1', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80', name: 'abstract_waves.jpg', size: '242 KB' },
     { id: 'img-2', url: 'https://images.unsplash.com/photo-1618005198143-e5283b519a7f?auto=format&fit=crop&w=800&q=80', name: 'dark_neon_blocks.jpg', size: '185 KB' },
@@ -59,7 +59,6 @@ export default function MediaClient() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this media asset?')) return;
-    // Simulate delete in state
     setImages(prev => prev.filter(img => img.id !== id));
   };
 
@@ -74,12 +73,12 @@ export default function MediaClient() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-sm">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-sans font-extrabold tracking-tight">Media Library</h1>
-          <p className="text-muted-foreground text-sm">Upload, search, and copy Cloudinary content delivery URLs.</p>
+        <div className="space-y-1">
+          <h1 className="text-3xl font-serif font-black tracking-tight">Media Library</h1>
+          <p className="text-muted text-xs font-sans font-medium">Upload, search, and copy asset URLs.</p>
         </div>
 
         <div>
@@ -93,7 +92,7 @@ export default function MediaClient() {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold bg-primary text-black hover:bg-primary/95 transition-all rounded-lg shadow-sm cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 text-xs font-bold bg-primary hover:bg-primary-hover text-primary-foreground transition-all rounded-lg cursor-pointer disabled:opacity-50"
           >
             <Upload className="h-4.5 w-4.5" />
             <span>{uploading ? 'Uploading...' : 'Upload Image'}</span>
@@ -105,37 +104,37 @@ export default function MediaClient() {
       <div className="relative max-w-md w-full">
         <input
           type="text"
-          placeholder="Search images by filename..."
+          placeholder="Search by filename..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-surface border border-border rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-hidden focus:border-primary shadow-xs"
+          className="w-full bg-background border border-border rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-hidden focus:border-primary shadow-xs font-sans text-foreground"
         />
-        <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-muted" />
       </div>
 
       {/* Grid view of images */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 font-sans">
         {filteredImages.map((img) => (
           <div
             key={img.id}
-            className="bg-surface border border-border rounded-xl overflow-hidden shadow-xs group flex flex-col justify-between"
+            className="bg-background border border-border rounded-lg overflow-hidden flex flex-col justify-between"
           >
-            <div className="relative aspect-video w-full overflow-hidden bg-background border-b border-border">
+            <div className="relative aspect-video w-full overflow-hidden bg-surface border-b border-border">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={img.url}
                 alt={img.name}
-                className="object-cover w-full h-full transform group-hover:scale-102 transition-transform duration-300"
+                className="object-cover w-full h-full hover:scale-101 transition-transform"
               />
             </div>
             
-            <div className="p-4 space-y-3">
+            <div className="p-4 space-y-3.5">
               <div className="space-y-0.5">
                 <p className="text-xs font-bold text-foreground truncate" title={img.name}>
                   {img.name}
                 </p>
                 {img.size && (
-                  <p className="text-[10px] text-muted-foreground font-semibold">
+                  <p className="text-[10px] text-muted font-bold">
                     Size: {img.size}
                   </p>
                 )}
@@ -144,12 +143,12 @@ export default function MediaClient() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleCopy(img.id, img.url)}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold bg-background border border-border rounded-lg text-foreground hover:bg-surface-hover transition-colors cursor-pointer"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold bg-background border border-border rounded-lg text-foreground hover:bg-surface transition-colors cursor-pointer"
                 >
                   {copiedId === img.id ? (
                     <>
-                      <Check className="h-3.5 w-3.5 text-green-500" />
-                      <span className="text-green-500">Copied</span>
+                      <Check className="h-3.5 w-3.5 text-green-600" />
+                      <span className="text-green-600">Copied</span>
                     </>
                   ) : (
                     <>
@@ -160,10 +159,10 @@ export default function MediaClient() {
                 </button>
                 <button
                   onClick={() => handleDelete(img.id)}
-                  className="p-2 border border-border rounded-lg bg-background text-muted-foreground hover:text-red-500 hover:border-red-500/30 transition-colors cursor-pointer"
+                  className="p-2 border border-border rounded-lg bg-background text-muted hover:text-red-500 hover:border-red-500/20 transition-colors cursor-pointer"
                   title="Delete Image"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <Trash2 className="h-3.5 w-3.5 stroke-[1.5]" />
                 </button>
               </div>
             </div>
@@ -172,8 +171,8 @@ export default function MediaClient() {
       </div>
 
       {filteredImages.length === 0 && (
-        <div className="text-center py-20 border border-dashed border-border rounded-2xl bg-surface/30 flex flex-col items-center justify-center space-y-2 text-muted-foreground">
-          <ImageIcon className="h-8 w-8" />
+        <div className="text-center py-20 border border-dashed border-border rounded-lg bg-background flex flex-col items-center justify-center space-y-2 text-muted font-semibold">
+          <ImageIcon className="h-8 w-8 text-border" />
           <span>No image assets found. Upload your first image top-right.</span>
         </div>
       )}

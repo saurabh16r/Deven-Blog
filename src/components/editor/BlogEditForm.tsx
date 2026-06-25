@@ -245,22 +245,22 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-8 text-sm">
       {/* Title bar controls */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-6">
         <div className="flex items-center space-x-3">
           <Link
             href="/admin/blogs"
-            className="p-2 border border-border rounded-lg hover:bg-surface text-muted-foreground hover:text-foreground transition-colors"
+            className="p-2 border border-border rounded-lg hover:bg-surface text-muted hover:text-foreground transition-colors cursor-pointer"
           >
             <ArrowLeft className="h-4.5 w-4.5" />
           </Link>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-sans font-extrabold tracking-tight">
+          <div className="space-y-0.5">
+            <h1 className="text-3xl font-serif font-black tracking-tight">
               {isEdit ? 'Edit Article' : 'Create Article'}
             </h1>
-            <p className="text-muted-foreground text-sm">
-              {isEdit ? `Modifying: ${blog.title}` : 'Draft a new business or tech insights breakdown.'}
+            <p className="text-muted text-xs font-sans font-medium">
+              {isEdit ? `Modifying: ${formData.title}` : 'Draft a new business or tech insights breakdown.'}
             </p>
           </div>
         </div>
@@ -269,23 +269,23 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 font-bold bg-primary text-black hover:bg-primary/95 transition-all rounded-lg shadow-sm cursor-pointer disabled:opacity-40"
+            className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 font-bold bg-primary hover:bg-primary-hover text-primary-foreground transition-colors rounded-lg cursor-pointer disabled:opacity-40"
           >
-            <Save className="h-4.5 w-4.5" />
+            <Save className="h-4 w-4" />
             <span>{saving ? 'Saving...' : 'Save Article'}</span>
           </button>
         </div>
       </div>
 
       {errorMsg && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-lg flex items-center gap-2 text-sm font-bold">
+        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-600 rounded-lg flex items-center gap-2 font-bold font-sans">
           <AlertCircle className="h-5 w-5 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
       {successMsg && (
-        <div className="p-4 bg-green-500/10 border border-green-500/20 text-green-500 rounded-lg flex items-center gap-2 text-sm font-bold">
+        <div className="p-4 bg-green-500/10 border border-green-500/20 text-green-600 rounded-lg flex items-center gap-2 font-bold font-sans">
           <Check className="h-5 w-5 shrink-0" />
           <span>{successMsg}</span>
         </div>
@@ -296,27 +296,27 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
         {/* Left Side: Editorial Inputs & Tiptap Editor */}
         <div className="lg:col-span-8 space-y-6">
           {/* Article Info Cards */}
-          <div className="bg-surface border border-border p-6 rounded-xl space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground pb-2 border-b border-border">
+          <div className="bg-background border border-border p-6 rounded-lg space-y-4">
+            <h3 className="text-xs uppercase font-extrabold tracking-widest text-muted pb-2 border-b border-border font-sans select-none">
               Core Identity
             </h3>
 
-            <div className="space-y-4">
+            <div className="space-y-4 font-sans">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Article Title</label>
+                <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Article Title</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={handleTitleChange}
                   placeholder="e.g. The AI Moat Illusion: Why Models Aren’t Defensible"
                   required
-                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2 text-sm focus:outline-hidden focus:border-primary font-bold text-base"
+                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-base focus:outline-hidden focus:border-primary font-serif font-black text-foreground"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">URL Slug</label>
+                  <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">URL Slug</label>
                   <input
                     type="text"
                     name="slug"
@@ -324,17 +324,17 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
                     onChange={handleInputChange}
                     placeholder="the-ai-moat-illusion"
                     required
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-hidden focus:border-primary font-mono text-xs"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 focus:outline-hidden focus:border-primary font-mono text-xs text-foreground"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Category</label>
+                  <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Category</label>
                   <select
                     name="category"
                     value={formData.category}
                     onChange={handleInputChange}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-hidden focus:border-primary font-bold"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 focus:outline-hidden focus:border-primary font-bold text-foreground cursor-pointer"
                   >
                     {categories.map((cat) => (
                       <option key={cat._id} value={cat.name}>
@@ -346,7 +346,7 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Short Excerpt (Summary)</label>
+                <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Short Excerpt (Summary)</label>
                 <textarea
                   name="excerpt"
                   value={formData.excerpt}
@@ -354,33 +354,33 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
                   placeholder="Brief 1-2 sentence hook describing what the article is about..."
                   required
                   rows={2}
-                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2 text-sm focus:outline-hidden focus:border-primary resize-none"
+                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2 focus:outline-hidden focus:border-primary resize-none text-foreground"
                 />
               </div>
             </div>
           </div>
 
           {/* Tiptap rich editor */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Article Body Content</label>
+          <div className="space-y-2 font-sans">
+            <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted select-none">Article Body Content</label>
             <TiptapEditor content={formData.content} onChange={handleContentChange} />
-            <div className="text-xs text-muted-foreground font-semibold flex items-center justify-between">
-              <span>Supports Drag & Drop images to automatically upload to Cloudinary.</span>
-              <span>Estimated Reading Time: {formData.readingTime} min</span>
+            <div className="text-[10px] font-extrabold uppercase tracking-wider text-muted flex items-center justify-between select-none">
+              <span>Supports drag & drop images.</span>
+              <span>Estimated: {formData.readingTime} min read</span>
             </div>
           </div>
 
-          {/* OpenAI take-away bullets summary field */}
-          <div className="bg-surface border border-border p-6 rounded-xl space-y-4">
+          {/* OpenAI takeaways summary field */}
+          <div className="bg-background border border-border p-6 rounded-lg space-y-4">
             <div className="flex justify-between items-center pb-2 border-b border-border">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-                <Sparkles className="h-4.5 w-4.5 text-primary" /> Key Takeaways AI Summary
+              <h3 className="text-xs uppercase font-extrabold tracking-widest text-muted flex items-center gap-1.5 font-sans select-none">
+                <Sparkles className="h-4 w-4 text-primary fill-primary" /> Key Takeaways AI Summary
               </h3>
               <button
                 type="button"
                 onClick={handleGenerateSummary}
                 disabled={generatingSummary}
-                className="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold border border-primary/30 text-primary hover:bg-primary hover:text-black transition-colors rounded-lg cursor-pointer disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border border-border text-foreground hover:bg-surface transition-colors rounded-lg cursor-pointer disabled:opacity-40"
               >
                 {generatingSummary ? 'Synthesizing...' : '⚡ Generate AI summary'}
               </button>
@@ -389,71 +389,71 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
               name="aiSummary"
               value={formData.aiSummary}
               onChange={handleInputChange}
-              placeholder="Generate summary to automatically generate 5 bullet points takeaway insights..."
-              rows={6}
-              className="w-full bg-background border border-border rounded-lg p-3 text-sm focus:outline-hidden focus:border-primary font-mono text-xs resize-none"
+              placeholder="Generate summary to automatically populate bullet takeaways..."
+              rows={5}
+              className="w-full bg-background border border-border rounded-lg p-3 focus:outline-hidden focus:border-primary font-mono text-xs resize-none text-foreground"
             />
           </div>
         </div>
 
         {/* Right Side: Toggles, Uploads, SEO Setup */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="lg:col-span-4 space-y-6 font-sans">
           
           {/* Status & Publication Toggles Card */}
-          <div className="bg-surface border border-border p-6 rounded-xl space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground pb-2 border-b border-border">
+          <div className="bg-background border border-border p-6 rounded-lg space-y-4">
+            <h3 className="text-xs uppercase font-extrabold tracking-widest text-muted pb-2 border-b border-border select-none">
               Publish Status
             </h3>
 
             <div className="divide-y divide-border text-sm">
-              <div className="flex items-center justify-between py-2.5 first:pt-0">
+              <div className="flex items-center justify-between py-3 first:pt-0">
                 <span className="font-bold text-foreground">Publish Live</span>
                 <button
                   type="button"
                   onClick={() => handleToggle('published')}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                  className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors cursor-pointer ${
                     formData.published ? 'bg-primary' : 'bg-border'
                   }`}
                 >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
-                    formData.published ? 'translate-x-6' : 'translate-x-1'
+                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-background transition-transform ${
+                    formData.published ? 'translate-x-5' : 'translate-x-1'
                   }`} />
                 </button>
               </div>
 
-              <div className="flex items-center justify-between py-2.5">
+              <div className="flex items-center justify-between py-3">
                 <span className="font-bold text-foreground">Featured Article</span>
                 <button
                   type="button"
                   onClick={() => handleToggle('featured')}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                  className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors cursor-pointer ${
                     formData.featured ? 'bg-primary' : 'bg-border'
                   }`}
                 >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
-                    formData.featured ? 'translate-x-6' : 'translate-x-1'
+                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-background transition-transform ${
+                    formData.featured ? 'translate-x-5' : 'translate-x-1'
                   }`} />
                 </button>
               </div>
 
-              <div className="flex items-center justify-between py-2.5">
+              <div className="flex items-center justify-between py-3">
                 <span className="font-bold text-foreground">Is Trending</span>
                 <button
                   type="button"
                   onClick={() => handleToggle('isTrending')}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                  className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors cursor-pointer ${
                     formData.isTrending ? 'bg-primary' : 'bg-border'
                   }`}
                 >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
-                    formData.isTrending ? 'translate-x-6' : 'translate-x-1'
+                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-background transition-transform ${
+                    formData.isTrending ? 'translate-x-5' : 'translate-x-1'
                   }`} />
                 </button>
               </div>
 
               {formData.isTrending && (
-                <div className="py-2.5 space-y-1">
-                  <label className="text-xs font-bold text-muted-foreground uppercase">Trending Rank (1-5)</label>
+                <div className="py-3 space-y-2">
+                  <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted block">Trending Rank (1-5)</label>
                   <input
                     type="number"
                     name="trendingRank"
@@ -461,19 +461,19 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
                     max="5"
                     value={formData.trendingRank}
                     onChange={handleInputChange}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-1.5 text-xs focus:outline-hidden"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-1.5 text-xs focus:outline-hidden text-foreground"
                   />
                   <div className="flex items-center justify-between pt-2">
-                    <span className="text-xs text-muted-foreground">Featured Trending Card</span>
+                    <span className="text-xs font-semibold text-muted">Featured Trending Box</span>
                     <button
                       type="button"
                       onClick={() => handleToggle('featuredTrending')}
-                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer ${
+                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors cursor-pointer ${
                         formData.featuredTrending ? 'bg-primary' : 'bg-border'
                       }`}
                     >
                       <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-background transition-transform ${
-                        formData.featuredTrending ? 'translate-x-4.5' : 'translate-x-1'
+                        formData.featuredTrending ? 'translate-x-5' : 'translate-x-1'
                       }`} />
                     </button>
                   </div>
@@ -483,28 +483,28 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
           </div>
 
           {/* Media Cover Image Setup */}
-          <div className="bg-surface border border-border p-6 rounded-xl space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground pb-2 border-b border-border">
+          <div className="bg-background border border-border p-6 rounded-lg space-y-4">
+            <h3 className="text-xs uppercase font-extrabold tracking-widest text-muted pb-2 border-b border-border select-none">
               Cover Image
             </h3>
 
             <div className="space-y-4">
               {formData.coverImage && (
-                <div className="aspect-video w-full rounded-lg overflow-hidden border border-border bg-background">
+                <div className="aspect-video w-full rounded-md overflow-hidden border border-border bg-background">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={formData.coverImage} alt="Preview" className="object-cover w-full h-full" />
                 </div>
               )}
 
-              <div className="space-y-1.5 text-sm">
-                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Image URL</label>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Image URL</label>
                 <input
                   type="text"
                   name="coverImage"
                   value={formData.coverImage}
                   onChange={handleInputChange}
-                  placeholder="https://cloudinary.com/..."
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs focus:outline-hidden focus:border-primary"
+                  placeholder="Paste URL..."
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs focus:outline-hidden focus:border-primary text-foreground"
                 />
               </div>
 
@@ -518,26 +518,26 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
                 />
                 <label
                   htmlFor="coverImageUpload"
-                  className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-border rounded-lg text-xs font-bold text-foreground hover:bg-background cursor-pointer transition-colors shadow-xs"
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-border rounded-lg text-xs font-bold text-foreground hover:bg-surface cursor-pointer transition-colors shadow-xs"
                 >
-                  <Upload className="h-4 w-4" />
-                  <span>{uploadingImage ? 'Uploading image...' : 'Upload cover Image'}</span>
+                  <Upload className="h-4 w-4 stroke-[1.5]" />
+                  <span>{uploadingImage ? 'Uploading image...' : 'Upload cover image'}</span>
                 </label>
               </div>
             </div>
           </div>
 
           {/* Audio TTS generator widget */}
-          <div className="bg-surface border border-border p-6 rounded-xl space-y-4">
+          <div className="bg-background border border-border p-6 rounded-lg space-y-4">
             <div className="flex justify-between items-center pb-2 border-b border-border">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-                <Headphones className="h-4.5 w-4.5 text-primary" /> Audio Article
+              <h3 className="text-xs uppercase font-extrabold tracking-widest text-muted flex items-center gap-1.5 select-none">
+                <Headphones className="h-4 w-4 text-primary" /> Audio Article
               </h3>
               <button
                 type="button"
                 onClick={handleGenerateAudio}
                 disabled={generatingAudio}
-                className="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold border border-primary/30 text-primary hover:bg-primary hover:text-black transition-colors rounded-lg cursor-pointer disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border border-border text-foreground hover:bg-surface transition-colors rounded-lg cursor-pointer disabled:opacity-40"
               >
                 {generatingAudio ? 'Compiling...' : '⚡ Generate Speech'}
               </button>
@@ -549,75 +549,75 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
                 <button
                   type="button"
                   onClick={() => handleToggle('audioEnabled')}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                  className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors cursor-pointer ${
                     formData.audioEnabled ? 'bg-primary' : 'bg-border'
                   }`}
                 >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
-                    formData.audioEnabled ? 'translate-x-6' : 'translate-x-1'
+                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-background transition-transform ${
+                    formData.audioEnabled ? 'translate-x-5' : 'translate-x-1'
                   }`} />
                 </button>
               </div>
 
-              <div className="space-y-1.5 text-sm">
-                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground font-mono">Speech URL</label>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Speech URL</label>
                 <input
                   type="text"
                   name="audioUrl"
                   value={formData.audioUrl}
                   onChange={handleInputChange}
-                  placeholder="Generate Speech or enter URL..."
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs focus:outline-hidden font-mono"
+                  placeholder="Speech URL..."
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs focus:outline-hidden font-mono text-foreground"
                 />
               </div>
             </div>
           </div>
 
           {/* Tags Setup */}
-          <div className="bg-surface border border-border p-6 rounded-xl space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground pb-2 border-b border-border">
+          <div className="bg-background border border-border p-6 rounded-lg space-y-4">
+            <h3 className="text-xs uppercase font-extrabold tracking-widest text-muted pb-2 border-b border-border select-none">
               Tags Setup
             </h3>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Tags (Comma Separated)</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Tags (Comma Separated)</label>
               <input
                 type="text"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 placeholder="e.g. AI, Startups, Product"
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-hidden focus:border-primary"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-hidden focus:border-primary text-foreground"
               />
             </div>
           </div>
 
           {/* SEO Meta Fields Setup */}
-          <div className="bg-surface border border-border p-6 rounded-xl space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground pb-2 border-b border-border">
+          <div className="bg-background border border-border p-6 rounded-lg space-y-4">
+            <h3 className="text-xs uppercase font-extrabold tracking-widest text-muted pb-2 border-b border-border select-none">
               SEO Metadata
             </h3>
 
             <div className="space-y-4">
-              <div className="space-y-1.5 text-sm">
-                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">SEO Meta Title</label>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">SEO Meta Title</label>
                 <input
                   type="text"
                   name="seoTitle"
                   value={formData.seoTitle}
                   onChange={handleInputChange}
                   placeholder="e.g. Linear PLG breakdown"
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs focus:outline-hidden"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs focus:outline-hidden text-foreground"
                 />
               </div>
 
-              <div className="space-y-1.5 text-sm">
-                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">SEO Description</label>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">SEO Description</label>
                 <textarea
                   name="seoDescription"
                   value={formData.seoDescription}
                   onChange={handleInputChange}
-                  placeholder="Custom search engine description override..."
+                  placeholder="Custom search description override..."
                   rows={2}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs focus:outline-hidden resize-none"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs focus:outline-hidden resize-none text-foreground"
                 />
               </div>
             </div>

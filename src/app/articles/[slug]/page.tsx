@@ -5,13 +5,12 @@ import { Blog } from '@/lib/models';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import ReadingProgressBar from '@/components/blog/ReadingProgressBar';
-import TableOfContents from '@/components/blog/TableOfContents';
 import ShareButtons from '@/components/blog/ShareButtons';
 import AISummary from '@/components/blog/AISummary';
 import AudioPlayer from '@/components/blog/AudioPlayer';
-import ArticleCard from '@/components/blog/ArticleCard';
 import { formatDate, slugify } from '@/lib/utils';
-import { Calendar, Clock, Eye, User } from 'lucide-react';
+import { Share2, Bookmark } from 'lucide-react';
+import Link from 'next/link';
 
 export const revalidate = 0;
 
@@ -24,7 +23,7 @@ function injectHeadingIds(html: string): string {
   return html.replace(/<h2>(.*?)<\/h2>/g, (match, titleText) => {
     const cleanText = titleText.replace(/<[^>]*>/g, '');
     const id = slugify(cleanText);
-    return `<h2 id="${id}" class="scroll-mt-24 font-bold text-2xl border-b border-border pb-1 mt-8 mb-4">${titleText}</h2>`;
+    return `<h2 id="${id}" class="scroll-mt-24 font-serif font-black text-2xl border-b border-border pb-1 mt-8 mb-4 text-foreground">${titleText}</h2>`;
   });
 }
 
@@ -45,24 +44,25 @@ export default async function ArticleDetailPage({ params }: PageProps) {
   if (dbBlog) {
     blog = JSON.parse(JSON.stringify(dbBlog));
     
+    // Fetch only 2 related articles as per "Two related articles. Editorial list."
     const dbRelated = await Blog.find({
       published: true,
       slug: { $ne: slug },
       category: blog.category
     })
-    .limit(3)
+    .limit(2)
     .lean();
 
     relatedArticles = JSON.parse(JSON.stringify(dbRelated));
 
     // Fallback if not enough category matches
-    if (relatedArticles.length < 3) {
+    if (relatedArticles.length < 2) {
       const extraRelated = await Blog.find({
         published: true,
         slug: { $ne: slug },
         category: { $ne: blog.category }
       })
-      .limit(3 - relatedArticles.length)
+      .limit(2 - relatedArticles.length)
       .lean();
       relatedArticles = [...relatedArticles, ...JSON.parse(JSON.stringify(extraRelated))];
     }
@@ -80,114 +80,146 @@ export default async function ArticleDetailPage({ params }: PageProps) {
       <ReadingProgressBar />
       <Navbar />
 
-      <main className="flex-grow py-10 sm:py-16">
-        <article className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="flex-grow py-12 sm:py-20">
+        <article className="max-w-[760px] mx-auto px-4 w-full space-y-8">
           
-          {/* Article Header Metadata */}
-          <div className="max-w-3xl mx-auto text-center space-y-5 mb-8">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-primary text-black">
-              {blog.category}
-            </span>
-            <h1 className="text-3xl sm:text-5xl font-sans font-extrabold tracking-tight leading-tight text-foreground">
+          {/* Header Metadata Section */}
+          <div className="space-y-4">
+            <div className="text-xs uppercase font-extrabold tracking-widest text-primary flex items-center gap-1.5">
+              <span>{blog.category}</span>
+              <span>•</span>
+              <span>{blog.readingTime} min read</span>
+            </div>
+
+            <h1 className="text-3xl sm:text-5xl font-serif font-black tracking-tight leading-[1.15] text-foreground">
               {blog.title}
             </h1>
-            <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">
-              {blog.excerpt}
+          </div>
+
+          {/* Author Block Row */}
+          <div className="flex items-center justify-between border-y border-border py-4 my-6">
+            <div className="flex items-center space-x-3">
+              <div className="h-10 w-10 bg-primary text-black rounded-full flex items-center justify-center font-bold font-serif text-sm shrink-0 select-none">
+                JD
+              </div>
+              <div>
+                <p className="text-sm font-bold text-foreground">Jane Doe</p>
+                <p className="text-[11px] font-semibold text-muted uppercase tracking-wider">
+                  EDITOR-IN-CHIEF • {formatDate(blog.createdAt)}
+                </p>
+              </div>
+            </div>
+
+            {/* Top Share & Bookmark minimal buttons */}
+            <div className="flex items-center space-x-2">
+              <button 
+                className="p-2 border border-border hover:bg-surface rounded-full transition-colors cursor-pointer text-muted hover:text-foreground"
+                title="Share briefing"
+              >
+                <Share2 className="h-4 w-4 stroke-[1.5]" />
+              </button>
+              <button 
+                className="p-2 border border-border hover:bg-surface rounded-full transition-colors cursor-pointer text-muted hover:text-foreground"
+                title="Bookmark briefing"
+              >
+                <Bookmark className="h-4 w-4 stroke-[1.5]" />
+              </button>
+            </div>
+          </div>
+
+          {/* Cover Image Block */}
+          <div className="space-y-3">
+            <div className="w-full aspect-video rounded-lg overflow-hidden border border-border bg-surface">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={blog.coverImage}
+                alt={blog.title}
+                className="object-cover w-full h-full"
+                loading="eager"
+              />
+            </div>
+            <p className="text-center text-xs italic text-muted leading-relaxed font-serif pt-1">
+              Cover illustration for {blog.title}. Photo by FounderBrief Editorial.
             </p>
-            
-            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 pt-4 border-y border-border py-4 text-xs sm:text-sm text-muted-foreground">
-              <span className="flex items-center space-x-1.5 font-semibold text-foreground">
-                <User className="h-4 w-4" />
-                <span>Deven Editorial</span>
-              </span>
-              <span className="flex items-center space-x-1.5">
-                <Calendar className="h-4 w-4" />
-                <span>{formatDate(blog.createdAt)}</span>
-              </span>
-              <span className="flex items-center space-x-1.5">
-                <Clock className="h-4 w-4" />
-                <span>{blog.readingTime} min read</span>
-              </span>
-              <span className="flex items-center space-x-1.5">
-                <Eye className="h-4 w-4" />
-                <span>{blog.views} views</span>
-              </span>
-            </div>
           </div>
 
-          {/* Hero Banner Cover */}
-          <div className="w-full aspect-video sm:aspect-21/9 rounded-2xl overflow-hidden mb-12 shadow-sm border border-border">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={blog.coverImage}
-              alt={blog.title}
-              className="object-cover w-full h-full"
-            />
+          {/* Collapsible AI Summary Widget */}
+          <AISummary
+            summaryText={blog.aiSummary}
+            enabled={blog.aiSummaryEnabled}
+          />
+
+          {/* Custom TTS Voice player */}
+          <AudioPlayer
+            audioUrl={blog.audioUrl}
+          />
+
+          {/* Editorial Content Body */}
+          <div 
+            className="ProseMirror editorial-text text-foreground/90 leading-relaxed font-sans"
+            dangerouslySetInnerHTML={{ __html: contentWithIds }}
+          />
+
+          {/* Tag Badges Footer */}
+          {blog.tags && blog.tags.length > 0 && (
+            <div className="pt-6 border-t border-border mt-8 flex flex-wrap gap-2">
+              {blog.tags.map((tag: string) => (
+                <span
+                  key={tag}
+                  className="px-3 py-1 bg-surface border border-border text-muted text-xs font-semibold rounded-md"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Social Share Section */}
+          <div className="border-t border-border pt-6 mt-8">
+            <ShareButtons title={blog.title} />
           </div>
 
-          {/* Core Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12">
-            
-            {/* Left Column: TOC and Sharing Actions (Sticky) */}
-            <aside className="hidden lg:block lg:col-span-3 space-y-8">
-              <div className="sticky top-28 space-y-8">
-                <TableOfContents htmlContent={blog.content} />
-                <hr className="border-border" />
-                <ShareButtons title={blog.title} />
-              </div>
-            </aside>
-
-            {/* Center Column: Interactive widgets + Content Body */}
-            <div className="lg:col-span-7 space-y-6 max-w-3xl mx-auto lg:mx-0 w-full">
-              
-              {/* Premium AI Summary Widget */}
-              <AISummary
-                summaryText={blog.aiSummary}
-                enabled={blog.aiSummaryEnabled}
-              />
-
-              {/* Custom TTS Voice player */}
-              <AudioPlayer
-                audioUrl={blog.audioUrl}
-              />
-
-              {/* Primary Content HTML Body */}
-              <div 
-                className="ProseMirror editorial-text text-foreground/90 leading-relaxed font-serif"
-                dangerouslySetInnerHTML={{ __html: contentWithIds }}
-              />
-
-              {/* Tag Badges footer */}
-              {blog.tags && blog.tags.length > 0 && (
-                <div className="pt-6 border-t border-border mt-8 flex flex-wrap gap-2">
-                  {blog.tags.map((tag: string) => (
-                    <span
-                      key={tag}
-                      className="px-3 py-1 bg-surface border border-border text-muted-foreground text-xs font-semibold rounded-md"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Mobile Share Action Block */}
-            <div className="block lg:hidden border-t border-border pt-6 mt-8">
-              <ShareButtons title={blog.title} />
-            </div>
-          </div>
-
-          {/* Related Articles Footer Section */}
+          {/* Continue Reading / Related Articles Section */}
           {relatedArticles.length > 0 && (
-            <div className="border-t border-border mt-16 pt-16">
-              <div className="flex flex-col space-y-2 mb-8">
-                <span className="text-xs uppercase font-extrabold tracking-widest text-primary">Next Read</span>
-                <h2 className="text-2xl sm:text-3xl font-sans font-extrabold tracking-tight">Related Startup Insights</h2>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="border-t border-border mt-16 pt-12 space-y-6">
+              <span className="text-xs uppercase font-extrabold tracking-widest text-muted block">
+                Continue Reading
+              </span>
+              
+              {/* Vertical Editorial List */}
+              <div className="divide-y divide-border">
                 {relatedArticles.map((related) => (
-                  <ArticleCard key={related._id} article={related} />
+                  <div key={related._id} className="py-6 first:pt-0 last:pb-0 flex items-start justify-between gap-6 group">
+                    
+                    {/* Left text layout */}
+                    <div className="flex-1 space-y-2">
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">
+                        {related.category}
+                      </span>
+                      <h3 className="font-serif font-black text-lg sm:text-xl text-foreground group-hover:text-primary transition-colors leading-snug">
+                        <Link href={`/articles/${related.slug}`}>
+                          {related.title}
+                        </Link>
+                      </h3>
+                      <p className="text-muted text-xs sm:text-sm line-clamp-2 leading-relaxed font-medium">
+                        {related.excerpt}
+                      </p>
+                    </div>
+
+                    {/* Right visual layout */}
+                    <div className="h-16 w-24 sm:h-20 sm:w-28 rounded-lg overflow-hidden border border-border bg-surface shrink-0">
+                      <Link href={`/articles/${related.slug}`}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                          src={related.coverImage} 
+                          alt="" 
+                          className="object-cover w-full h-full hover:scale-101 transition-transform" 
+                          loading="lazy"
+                        />
+                      </Link>
+                    </div>
+
+                  </div>
                 ))}
               </div>
             </div>

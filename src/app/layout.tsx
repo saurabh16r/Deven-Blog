@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Lora } from "next/font/google";
+import { Inter, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
@@ -8,13 +8,13 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const lora = Lora({
+const sourceSerif4 = Source_Serif_4({
   variable: "--font-serif",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Deven - The smartest startup insights in 5 minutes",
+  title: "FounderBrief - The smartest startup insights in 5 minutes",
   description: "Actionable startup breakdowns, AI trends, growth strategies, fundraising lessons, and founder stories delivered weekly.",
 };
 
@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${lora.variable} h-full antialiased`}
+      className={`${inter.variable} ${sourceSerif4.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground transition-colors duration-300">
@@ -37,4 +37,5 @@ export default function RootLayout({
     </html>
   );
 }
+
 

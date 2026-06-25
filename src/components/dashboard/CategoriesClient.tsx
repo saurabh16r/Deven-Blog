@@ -71,57 +71,57 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-sm">
       {/* Header Bar */}
       <div className="flex justify-between items-center border-b border-border pb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-sans font-extrabold tracking-tight">Categories</h1>
-          <p className="text-muted-foreground text-sm">Add, remove, and review filtering category pills.</p>
+        <div className="space-y-1">
+          <h1 className="text-3xl font-serif font-black tracking-tight">Categories</h1>
+          <p className="text-muted text-xs font-sans font-medium">Add, remove, and review filtering category tabs.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Side: Create Form */}
-        <div className="lg:col-span-4 bg-surface border border-border p-6 rounded-xl space-y-4">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5 border-b border-border pb-3">
-            <Plus className="h-4.5 w-4.5 text-primary" /> Create Category
+        <div className="lg:col-span-4 bg-background border border-border p-6 rounded-lg space-y-4">
+          <h3 className="text-xs uppercase font-extrabold tracking-widest text-muted flex items-center gap-1.5 border-b border-border pb-3 font-sans select-none">
+            <Plus className="h-4 w-4 text-primary" /> Create Category
           </h3>
 
-          <form onSubmit={handleCreate} className="space-y-4 text-sm">
+          <form onSubmit={handleCreate} className="space-y-4 font-sans">
             {errorMsg && (
-              <p className="text-xs text-red-500 font-bold bg-red-500/10 p-2 border border-red-500/20 rounded-md">
+              <p className="text-xs text-red-600 font-bold bg-red-500/10 p-2.5 border border-red-500/20 rounded-md">
                 {errorMsg}
               </p>
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Category Name</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Category Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={handleNameChange}
                 placeholder="e.g. Artificial Intelligence"
                 required
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-hidden focus:border-primary"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 focus:outline-hidden focus:border-primary text-foreground"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">URL Slug</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">URL Slug</label>
               <input
                 type="text"
                 value={slug}
                 onChange={(e) => setSlug(slugify(e.target.value))}
                 placeholder="artificial-intelligence"
                 required
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-hidden focus:border-primary"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 font-mono text-xs focus:outline-hidden focus:border-primary text-foreground"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary text-black font-extrabold text-xs px-4 py-2.5 rounded-lg hover:bg-primary/95 transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
+              className="w-full bg-primary hover:bg-primary-hover text-primary-foreground font-bold py-2.5 rounded-lg transition-colors cursor-pointer disabled:opacity-40"
             >
               <span>{loading ? 'Creating...' : 'Create Category'}</span>
             </button>
@@ -129,15 +129,15 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
         </div>
 
         {/* Right Side: Category Table */}
-        <div className="lg:col-span-8 bg-surface border border-border rounded-xl overflow-hidden shadow-xs">
-          <div className="px-6 py-4 border-b border-border bg-surface-hover/30">
-            <h3 className="text-xs uppercase font-extrabold tracking-widest text-foreground">Active Categories</h3>
+        <div className="lg:col-span-8 bg-background border border-border rounded-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-border bg-surface/30 select-none">
+            <h3 className="text-xs uppercase font-extrabold tracking-widest text-muted font-sans">Active Categories</h3>
           </div>
           
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse font-sans">
               <thead>
-                <tr className="bg-surface-hover/50 border-b border-border text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <tr className="bg-surface/10 border-b border-border text-[10px] font-extrabold uppercase tracking-widest text-muted">
                   <th className="px-6 py-4">Category Name</th>
                   <th className="px-6 py-4">URL Slug</th>
                   <th className="px-6 py-4 text-right">Actions</th>
@@ -145,20 +145,19 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
               </thead>
               <tbody className="divide-y divide-border text-sm">
                 {categories.map((cat) => (
-                  <tr key={cat._id} className="hover:bg-surface-hover/20 transition-colors">
+                  <tr key={cat._id} className="hover:bg-surface/20 transition-colors">
                     <td className="px-6 py-4 flex items-center space-x-2.5 font-bold text-foreground">
                       <Tag className="h-4 w-4 text-primary shrink-0" />
                       <span>{cat.name}</span>
                     </td>
-                    <td className="px-6 py-4 text-muted-foreground font-mono text-xs">{cat.slug}</td>
+                    <td className="px-6 py-4 text-muted font-mono text-xs">{cat.slug}</td>
                     <td className="px-6 py-4 text-right">
-                      {/* Prevent deleting default mock categories */}
                       <button
                         onClick={() => handleDelete(cat._id)}
-                        className="p-2 border border-border rounded-lg hover:bg-red-500/10 text-muted-foreground hover:text-red-500 transition-colors cursor-pointer"
+                        className="p-1.5 border border-border rounded-md hover:bg-red-500/10 text-muted hover:text-red-500 hover:border-red-500/20 transition-all cursor-pointer"
                         title="Delete category"
                       >
-                        <Trash2 className="h-4.5 w-4.5" />
+                        <Trash2 className="h-3.5 w-3.5 stroke-[1.5]" />
                       </button>
                     </td>
                   </tr>
@@ -168,8 +167,8 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
           </div>
 
           {categories.length === 0 && (
-            <div className="text-center py-16 text-muted-foreground flex items-center justify-center flex-col space-y-2">
-              <FolderOpen className="h-8 w-8 text-muted" />
+            <div className="text-center py-16 text-muted flex items-center justify-center flex-col space-y-2 select-none font-sans font-medium">
+              <FolderOpen className="h-8 w-8 text-border" />
               <span>No categories found. Create your first category on the left.</span>
             </div>
           )}

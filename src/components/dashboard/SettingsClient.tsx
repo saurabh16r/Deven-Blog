@@ -77,45 +77,45 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-sm">
       {/* Header Bar */}
       <div className="flex justify-between items-center border-b border-border pb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-sans font-extrabold tracking-tight">Settings</h1>
-          <p className="text-muted-foreground text-sm">Configure site metrics, default metadata, and styling variables.</p>
+        <div className="space-y-1">
+          <h1 className="text-3xl font-serif font-black tracking-tight">Settings</h1>
+          <p className="text-muted text-xs font-sans font-medium">Configure site metrics, default metadata, and styling variables.</p>
         </div>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-8 max-w-3xl">
-        {/* Success Alert banner */}
+      <form onSubmit={handleSave} className="space-y-6 max-w-3xl font-sans">
+        {/* Success Alert */}
         {successMsg && (
-          <div className="p-4 bg-green-500/10 border border-green-500/30 text-green-500 rounded-lg flex items-center gap-2 text-sm font-bold animate-pulse">
+          <div className="p-4 bg-green-500/10 border border-green-500/30 text-green-600 rounded-lg flex items-center gap-2 font-bold font-sans">
             <CheckCircle className="h-5 w-5" />
             <span>{successMsg}</span>
           </div>
         )}
 
         {/* Global Settings Section */}
-        <div className="bg-surface border border-border p-6 rounded-xl space-y-4">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5 border-b border-border pb-3">
+        <div className="bg-background border border-border p-6 rounded-lg space-y-4">
+          <h3 className="text-xs uppercase font-extrabold tracking-widest text-muted flex items-center gap-1.5 border-b border-border pb-3 select-none">
             <Sliders className="h-4.5 w-4.5 text-primary" /> Global Identity
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Site Name</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Site Name</label>
               <input
                 type="text"
                 name="siteName"
                 value={settings.siteName}
                 onChange={handleChange}
                 required
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-hidden focus:border-primary"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 focus:outline-hidden focus:border-primary text-foreground"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Brand Primary Color</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Brand Primary Color</label>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -123,7 +123,7 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
                   value={settings.primaryColor}
                   onChange={handleChange}
                   required
-                  className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-hidden focus:border-primary"
+                  className="flex-1 bg-background border border-border rounded-lg px-3 py-2 font-mono text-xs focus:outline-hidden focus:border-primary text-foreground"
                 />
                 <input
                   type="color"
@@ -137,9 +137,9 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
           </div>
         </div>
 
-        {/* Features Toggle Toggles Section */}
-        <div className="bg-surface border border-border p-6 rounded-xl space-y-4">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5 border-b border-border pb-3">
+        {/* Features Toggle Section */}
+        <div className="bg-background border border-border p-6 rounded-lg space-y-4">
+          <h3 className="text-xs uppercase font-extrabold tracking-widest text-muted border-b border-border pb-3 select-none">
             Feature Toggles
           </h3>
 
@@ -147,17 +147,17 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
             <div className="flex items-center justify-between py-3 first:pt-0">
               <div>
                 <p className="font-bold text-foreground">Newsletter Subscription</p>
-                <p className="text-xs text-muted-foreground">Enable subscriber collection inputs and forms.</p>
+                <p className="text-xs text-muted font-medium">Enable subscriber collection inputs and forms.</p>
               </div>
               <button
                 type="button"
                 onClick={() => handleToggle('newsletterEnabled')}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors cursor-pointer ${
                   settings.newsletterEnabled ? 'bg-primary' : 'bg-border'
                 }`}
               >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
-                  settings.newsletterEnabled ? 'translate-x-6' : 'translate-x-1'
+                <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-background transition-transform ${
+                  settings.newsletterEnabled ? 'translate-x-5' : 'translate-x-1'
                 }`} />
               </button>
             </div>
@@ -165,17 +165,17 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
             <div className="flex items-center justify-between py-3">
               <div>
                 <p className="font-bold text-foreground">AI Summaries</p>
-                <p className="text-xs text-muted-foreground">Display takeaways blocks generated by Google Gemini.</p>
+                <p className="text-xs text-muted font-medium">Display takeaways blocks generated by Google Gemini.</p>
               </div>
               <button
                 type="button"
                 onClick={() => handleToggle('aiSummaryEnabled')}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors cursor-pointer ${
                   settings.aiSummaryEnabled ? 'bg-primary' : 'bg-border'
                 }`}
               >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
-                  settings.aiSummaryEnabled ? 'translate-x-6' : 'translate-x-1'
+                <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-background transition-transform ${
+                  settings.aiSummaryEnabled ? 'translate-x-5' : 'translate-x-1'
                 }`} />
               </button>
             </div>
@@ -183,17 +183,17 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
             <div className="flex items-center justify-between py-3 last:pb-0">
               <div>
                 <p className="font-bold text-foreground">Audio Articles</p>
-                <p className="text-xs text-muted-foreground">Enable text-to-speech audio players for readers.</p>
+                <p className="text-xs text-muted font-medium">Enable text-to-speech audio players for readers.</p>
               </div>
               <button
                 type="button"
                 onClick={() => handleToggle('audioEnabled')}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors cursor-pointer ${
                   settings.audioEnabled ? 'bg-primary' : 'bg-border'
                 }`}
               >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
-                  settings.audioEnabled ? 'translate-x-6' : 'translate-x-1'
+                <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-background transition-transform ${
+                  settings.audioEnabled ? 'translate-x-5' : 'translate-x-1'
                 }`} />
               </button>
             </div>
@@ -201,99 +201,99 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
         </div>
 
         {/* SEO Customization Defaults Section */}
-        <div className="bg-surface border border-border p-6 rounded-xl space-y-4">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5 border-b border-border pb-3">
+        <div className="bg-background border border-border p-6 rounded-lg space-y-4">
+          <h3 className="text-xs uppercase font-extrabold tracking-widest text-muted border-b border-border pb-3 select-none">
             SEO Defaults
           </h3>
 
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Meta Title Template</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Meta Title Template</label>
               <input
                 type="text"
                 name="seo.title"
                 value={settings.seoDefaults.title}
                 onChange={handleChange}
                 required
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-hidden focus:border-primary"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 focus:outline-hidden focus:border-primary text-foreground"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Meta Description</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Meta Description</label>
               <textarea
                 name="seo.description"
                 value={settings.seoDefaults.description}
                 onChange={handleChange}
                 required
                 rows={3}
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-hidden focus:border-primary resize-none"
+                className="w-full bg-background border border-border rounded-lg px-3.5 py-2 focus:outline-hidden focus:border-primary resize-none text-foreground"
               />
             </div>
           </div>
         </div>
 
         {/* Social Link Directories Section */}
-        <div className="bg-surface border border-border p-6 rounded-xl space-y-4">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5 border-b border-border pb-3">
+        <div className="bg-background border border-border p-6 rounded-lg space-y-4">
+          <h3 className="text-xs uppercase font-extrabold tracking-widest text-muted border-b border-border pb-3 select-none">
             Social Profiles
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Twitter / X</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Twitter / X</label>
               <input
                 type="url"
                 name="social.twitter"
                 value={settings.socialLinks.twitter}
                 onChange={handleChange}
                 placeholder="https://twitter.com"
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-hidden focus:border-primary"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs focus:outline-hidden focus:border-primary text-foreground"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">LinkedIn</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">LinkedIn</label>
               <input
                 type="url"
                 name="social.linkedin"
                 value={settings.socialLinks.linkedin}
                 onChange={handleChange}
                 placeholder="https://linkedin.com"
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-hidden focus:border-primary"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs focus:outline-hidden focus:border-primary text-foreground"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">GitHub</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">GitHub</label>
               <input
                 type="url"
                 name="social.github"
                 value={settings.socialLinks.github}
                 onChange={handleChange}
                 placeholder="https://github.com"
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-hidden focus:border-primary"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs focus:outline-hidden focus:border-primary text-foreground"
               />
             </div>
           </div>
         </div>
 
         {/* Custom Script Block */}
-        <div className="bg-surface border border-border p-6 rounded-xl space-y-4">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5 border-b border-border pb-3">
+        <div className="bg-background border border-border p-6 rounded-lg space-y-4">
+          <h3 className="text-xs uppercase font-extrabold tracking-widest text-muted border-b border-border pb-3 select-none">
             Analytics scripts
           </h3>
           <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Head Analytics Embed Code</label>
+            <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Head Analytics Embed Code</label>
             <textarea
               name="analyticsScript"
               value={settings.analyticsScript}
               onChange={handleChange}
-              placeholder="<!-- Google Analytics / Plausible script embed -->"
+              placeholder="<!-- Google Analytics embed -->"
               rows={3}
-              className="w-full bg-background border border-border rounded-lg p-3 text-xs font-mono focus:outline-hidden focus:border-primary resize-none"
+              className="w-full bg-background border border-border rounded-lg p-3 font-mono text-xs focus:outline-hidden focus:border-primary resize-none text-foreground"
             />
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-xs text-muted select-none">
               <Info className="h-4 w-4" />
               <span>Will be injected safely into pages. Don't add arbitrary executable JS codes.</span>
             </div>
@@ -305,9 +305,8 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center justify-center gap-1.5 px-6 py-3 font-bold bg-primary text-black hover:bg-primary/95 transition-all rounded-lg shadow-md cursor-pointer disabled:opacity-40"
+            className="inline-flex items-center justify-center px-6 py-3 font-bold bg-primary hover:bg-primary-hover text-primary-foreground transition-colors rounded-lg cursor-pointer disabled:opacity-40"
           >
-            <Save className="h-4.5 w-4.5" />
             <span>{saving ? 'Saving Settings...' : 'Save Configuration'}</span>
           </button>
         </div>

@@ -1,33 +1,41 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #111111;
-  --surface: #f8f9fa;
-  --surface-hover: #f1f3f5;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --primary: #ffc247;
-  --primary-foreground: #111111;
-  --card: #ffffff;
-  --card-foreground: #111111;
-  --popover: #ffffff;
-  --popover-foreground: #111111;
+  --background: #F9F5EF;
+  --secondary-background: #F4EDE2;
+  --surface: #F4EDE2;
+  --surface-hover: #EAE3D7;
+  --muted: #6B6258;
+  --border: #E6DED2;
+  --primary: #FFC247;
+  --primary-hover: #E8B33A;
+  --primary-foreground: #1F1A17;
+  --card: #F9F5EF;
+  --card-foreground: #1F1A17;
+  --popover: #F9F5EF;
+  --popover-foreground: #1F1A17;
+  --success: #2E8B57;
   
-  --radius: 0.75rem;
+  --radius: 8px;
 }
 
 .dark {
-  --background: #090d16;
-  --foreground: #f8fafc;
-  --surface: #121b2d;
-  --surface-hover: #1a263e;
-  --muted: #94a3b8;
-  --border: #1e293b;
-  --card: #0d1525;
-  --card-foreground: #f8fafc;
-  --popover: #0d1525;
-  --popover-foreground: #f8fafc;
+  --background: #0F0F10;
+  --secondary-background: #171717;
+  --surface: #171717;
+  --surface-hover: #1D1D1F;
+  --muted: #9A9A9A;
+  --border: #2C2C2F;
+  --primary: #FFC247;
+  --primary-hover: #E8B33A;
+  --primary-foreground: #111111;
+  --card: #171717;
+  --card-foreground: #FAFAF9;
+  --popover: #171717;
+  --popover-foreground: #FAFAF9;
+  --success: #22C55E;
+  --error: #EF4444;
+  --foreground: #FAFAF9;
 }
 
 @theme {
@@ -48,7 +56,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
   
-  --font-serif: "Lora", "Playfair Display", Georgia, serif;
+  --font-serif: var(--font-serif), Georgia, serif;
 }
 
 /* Custom global styles */
@@ -59,6 +67,8 @@ html {
 body {
   background-color: var(--background);
   color: var(--foreground);
+  font-family: var(--font-sans);
+  line-height: 1.75;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -81,106 +91,186 @@ body {
   background: var(--muted);
 }
 
-/* Glassmorphism Classes */
-.glass {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.dark .glass {
-  background: rgba(9, 13, 22, 0.75);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+/* Clean Editorial Navbar classes (No Glassmorphism) */
+.editorial-navbar {
+  background-color: var(--background);
+  border-bottom: 1px solid var(--border);
 }
 
 /* Editorial details */
 .editorial-text {
-  font-family: var(--font-serif);
-  line-height: 1.8;
+  font-family: var(--font-sans);
+  line-height: 1.9;
   font-size: 1.125rem;
+}
+
+.editorial-text h1,
+.editorial-text h2,
+.editorial-text h3,
+.editorial-text h4,
+.editorial-text h5,
+.editorial-text h6 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+/* Drop Cap on First Paragraph */
+.editorial-text > p:first-of-type::first-letter,
+.ProseMirror > p:first-of-type::first-letter {
+  font-family: var(--font-serif);
+  font-size: 4.5rem;
+  font-weight: 800;
+  float: left;
+  line-height: 0.8;
+  margin-top: 0.2rem;
+  margin-right: 0.6rem;
+  color: var(--foreground);
+}
+
+/* Premium magazine blockquotes */
+.editorial-text blockquote,
+.ProseMirror blockquote {
+  border-left: 3px solid var(--primary);
+  padding-left: 1.5rem;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.35rem;
+  line-height: 1.6;
+  color: var(--foreground);
+  margin: 2rem 0;
 }
 
 /* Tiptap content editor styles */
 .ProseMirror {
   outline: none;
   min-height: 250px;
+  font-family: var(--font-sans);
+  line-height: 1.85;
 }
 
 .ProseMirror p {
-  margin-bottom: 1.25rem;
-  line-height: 1.75;
+  margin-bottom: 1.5rem;
+  line-height: 1.85;
 }
 
 .ProseMirror h1 {
+  font-family: var(--font-serif);
   font-size: 2.25rem;
   font-weight: 800;
   margin-top: 2rem;
   margin-bottom: 1rem;
-  line-height: 1.2;
-}
-
-.ProseMirror h2 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin-top: 1.75rem;
-  margin-bottom: 0.75rem;
   line-height: 1.25;
 }
 
+.ProseMirror h2 {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 0.85rem;
+  line-height: 1.3;
+}
+
 .ProseMirror h3 {
-  font-size: 1.25rem;
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
   font-weight: 600;
-  margin-top: 1.5rem;
-  margin-bottom: 0.5rem;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .ProseMirror ul {
   list-style-type: disc;
   padding-left: 1.5rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 
 .ProseMirror ol {
   list-style-type: decimal;
   padding-left: 1.5rem;
-  margin-bottom: 1.25rem;
-}
-
-.ProseMirror blockquote {
-  border-left: 4px solid var(--primary);
-  padding-left: 1.25rem;
-  font-style: italic;
-  font-size: 1.25rem;
-  color: var(--muted);
-  margin: 1.5rem 0;
+  margin-bottom: 1.5rem;
 }
 
 .ProseMirror pre {
   background: var(--surface);
   padding: 1rem;
-  border-radius: 0.5rem;
+  border-radius: 6px;
   font-family: monospace;
   overflow-x: auto;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 
 .ProseMirror code {
   background: var(--surface);
   padding: 0.2rem 0.4rem;
-  border-radius: 0.25rem;
+  border-radius: 4px;
   font-size: 0.875rem;
 }
 
 .ProseMirror img {
   max-width: 100%;
   height: auto;
-  border-radius: 0.5rem;
-  margin: 1.5rem 0;
+  border-radius: 6px;
+  margin: 2rem 0;
 }
 
 .ProseMirror a {
-  color: #f2b230;
+  color: var(--primary-hover);
   text-decoration: underline;
   text-underline-offset: 4px;
 }
+
+/* Dark Mode Hierarchy & Readability Overrides */
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: #FAFAF9 !important;
+  font-weight: 800;
+}
+
+.dark p,
+.dark .editorial-text,
+.dark .ProseMirror p {
+  color: #D4D4D4 !important;
+  line-height: 1.95;
+}
+
+.dark p {
+  margin-bottom: 1.75rem;
+}
+
+.dark a:not([class*="bg-"]):not([class*="border-"]) {
+  color: #FAFAF9;
+  transition: color 0.2s ease-in-out;
+}
+
+.dark a:not([class*="bg-"]):not([class*="border-"]):hover {
+  color: #FFC247;
+}
+
+.dark .text-muted,
+.dark .text-muted-foreground,
+.dark span.text-muted,
+.dark .text-slate-500 {
+  color: #9A9A9A !important;
+}
+
+/* Category Menu Underline active */
+.dark button.border-primary,
+.dark a.border-primary {
+  color: #FFC247 !important;
+  border-color: #FFC247 !important;
+  border-bottom-width: 2px !important;
+}
+
+/* Input placeholder dark mode styling */
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #888888 !important;
+}
+
+

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Play, Pause, Volume2, VolumeX, Headphones, RotateCcw } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -12,7 +12,6 @@ export default function AudioPlayer({ audioUrl }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
 
@@ -50,14 +49,6 @@ export default function AudioPlayer({ audioUrl }: AudioPlayerProps) {
     setCurrentTime(time);
   };
 
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!audioRef.current) return;
-    const vol = parseFloat(e.target.value);
-    audioRef.current.volume = vol;
-    setVolume(vol);
-    setIsMuted(vol === 0);
-  };
-
   const toggleMute = () => {
     if (!audioRef.current) return;
     const nextMute = !isMuted;
@@ -72,12 +63,12 @@ export default function AudioPlayer({ audioUrl }: AudioPlayerProps) {
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
-  const speedOptions = [0.75, 1, 1.25, 1.5, 2];
+  const speedOptions = [1, 1.25, 1.5, 2];
 
   if (!audioUrl) return null;
 
   return (
-    <div className="bg-surface border border-border rounded-xl p-4 sm:p-6 mb-8 shadow-xs">
+    <div className="bg-[#1F1A17] dark:bg-[#181818] border border-[#2C2622] dark:border-[#2C2C2F] rounded-lg p-3.5 mb-8 text-white">
       <audio
         ref={audioRef}
         src={audioUrl}
@@ -86,82 +77,52 @@ export default function AudioPlayer({ audioUrl }: AudioPlayerProps) {
         onEnded={() => setIsPlaying(false)}
       />
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Left Side Info */}
-        <div className="flex items-center space-x-3.5">
-          <div className="h-10 w-10 sm:h-12 sm:w-12 bg-primary text-black rounded-full flex items-center justify-center shadow-sm">
-            <Headphones className="h-5 w-5 sm:h-6 sm:w-6" />
-          </div>
-          <div>
-            <span className="text-xs uppercase font-extrabold tracking-widest text-primary">Audio Article</span>
-            <h4 className="text-sm font-bold text-foreground leading-tight">Listen to this breakdown</h4>
-          </div>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
+        {/* Left Side: Play Button & Status */}
+        <div className="flex items-center space-x-3 shrink-0">
+          <button
+            onClick={togglePlay}
+            className="h-8 w-8 bg-primary hover:bg-primary-hover text-[#1F1A17] transition-all rounded-full flex items-center justify-center cursor-pointer shadow-xs focus:outline-hidden"
+            aria-label={isPlaying ? 'Pause' : 'Play'}
+          >
+            {isPlaying ? (
+              <Pause className="h-4 w-4 fill-current" />
+            ) : (
+              <Play className="h-4 w-4 fill-current translate-x-0.5" />
+            )}
+          </button>
+          <span className="text-xs uppercase font-extrabold tracking-wider select-none font-sans text-neutral-200 dark:text-[#FAFAF9]">
+            {isPlaying ? 'Playing briefing' : 'Listen to briefing'}
+          </span>
         </div>
 
-        {/* Center Controls */}
-        <div className="flex-1 flex flex-col items-center max-w-md mx-auto w-full space-y-2">
-          <div className="flex items-center space-x-4 w-full">
-            <span className="text-xs font-mono text-muted-foreground w-10 text-right">
-              {formatTime(currentTime)}
-            </span>
-            <input
-              type="range"
-              min="0"
-              max={duration || 100}
-              value={currentTime}
-              onChange={handleSeek}
-              className="flex-1 accent-primary h-1 bg-border rounded-lg cursor-pointer transition-all"
-            />
-            <span className="text-xs font-mono text-muted-foreground w-10">
-              {formatTime(duration)}
-            </span>
-          </div>
-
-          <div className="flex items-center space-x-6">
-            {/* Play Button */}
-            <button
-              onClick={togglePlay}
-              className="h-10 w-10 sm:h-12 sm:w-12 bg-primary text-black hover:bg-primary/95 transition-all rounded-full flex items-center justify-center shadow-md cursor-pointer focus:outline-hidden"
-              aria-label={isPlaying ? 'Pause' : 'Play'}
-            >
-              {isPlaying ? (
-                <Pause className="h-5 w-5 sm:h-6 sm:w-6 fill-black" />
-              ) : (
-                <Play className="h-5 w-5 sm:h-6 sm:w-6 fill-black translate-x-0.5" />
-              )}
-            </button>
-          </div>
+        {/* Center: Thin Seek Timeline */}
+        <div className="flex-1 flex items-center space-x-3 w-full sm:max-w-xs md:max-w-md">
+          <span className="text-[10px] font-mono text-neutral-400 dark:text-[#CFCFCF] w-8 text-right select-none">
+            {formatTime(currentTime)}
+          </span>
+          <input
+            type="range"
+            min="0"
+            max={duration || 100}
+            value={currentTime}
+            onChange={handleSeek}
+            className="flex-1 h-[2px] bg-neutral-700 dark:bg-neutral-800 accent-primary rounded-lg cursor-pointer transition-all focus:outline-hidden"
+          />
+          <span className="text-[10px] font-mono text-neutral-400 dark:text-[#CFCFCF] w-8 select-none">
+            {formatTime(duration)}
+          </span>
         </div>
 
-        {/* Right Side Settings */}
-        <div className="flex items-center justify-between sm:justify-end gap-6 border-t md:border-t-0 border-border pt-3 md:pt-0">
-          {/* Volume Control */}
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={toggleMute}
-              className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-              aria-label={isMuted ? 'Unmute' : 'Mute'}
-            >
-              {isMuted || volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-            </button>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={isMuted ? 0 : volume}
-              onChange={handleVolumeChange}
-              className="w-16 accent-primary h-1 bg-border rounded-lg cursor-pointer"
-            />
-          </div>
-
-          {/* Speed Selector */}
+        {/* Right Side: Volume & Speed Controls */}
+        <div className="flex items-center space-x-4 shrink-0 border-t sm:border-t-0 border-neutral-800 dark:border-[#2C2C2F] pt-2 sm:pt-0 w-full sm:w-auto justify-between sm:justify-end">
+          {/* Playback Speed */}
           <div className="flex items-center space-x-1.5">
-            <span className="text-xs text-muted-foreground">Speed</span>
+            <span className="text-[10px] text-neutral-400 dark:text-[#FAFAF9] uppercase tracking-wider select-none">Speed</span>
             <select
               value={playbackRate}
               onChange={(e) => setPlaybackRate(parseFloat(e.target.value))}
-              className="bg-background border border-border text-foreground text-xs font-bold rounded-md px-2 py-1 focus:outline-hidden focus:border-primary"
+              className="bg-neutral-800 dark:bg-[#111111] border border-neutral-700 dark:border-[#2C2C2F] text-white dark:text-[#FAFAF9] text-[10px] font-bold rounded px-1.5 py-0.5 focus:outline-hidden focus:border-primary cursor-pointer"
             >
               {speedOptions.map((rate) => (
                 <option key={rate} value={rate}>
@@ -170,6 +131,15 @@ export default function AudioPlayer({ audioUrl }: AudioPlayerProps) {
               ))}
             </select>
           </div>
+
+          {/* Mute Button */}
+          <button
+            onClick={toggleMute}
+            className="text-neutral-400 dark:text-[#FAFAF9] hover:text-white transition-colors cursor-pointer"
+            aria-label={isMuted ? 'Unmute' : 'Mute'}
+          >
+            {isMuted ? <VolumeX className="h-4.5 w-4.5" /> : <Volume2 className="h-4.5 w-4.5" />}
+          </button>
         </div>
       </div>
     </div>

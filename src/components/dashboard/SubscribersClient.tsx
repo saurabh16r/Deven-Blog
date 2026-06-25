@@ -73,18 +73,18 @@ export default function SubscribersClient({ initialSubscribers }: SubscribersCli
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-sm">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-sans font-extrabold tracking-tight">Subscribers</h1>
-          <p className="text-muted-foreground text-sm">Manage and download your weekly insights newsletter list.</p>
+        <div className="space-y-1">
+          <h1 className="text-3xl font-serif font-black tracking-tight">Subscribers</h1>
+          <p className="text-muted text-xs font-sans font-medium">Manage and download your weekly newsletter list.</p>
         </div>
         
         <button
           onClick={handleExportCSV}
           disabled={subscribers.length === 0}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold bg-primary text-black hover:bg-primary/95 transition-all rounded-lg shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 text-xs font-bold bg-primary hover:bg-primary-hover text-primary-foreground transition-all rounded-lg cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
         >
           <Download className="h-4 w-4" /> Export CSV
         </button>
@@ -94,25 +94,25 @@ export default function SubscribersClient({ initialSubscribers }: SubscribersCli
       <div className="relative max-w-md w-full">
         <input
           type="text"
-          placeholder="Search subscribers by email address..."
+          placeholder="Search subscribers..."
           value={search}
           onChange={handleSearchChange}
-          className="w-full bg-surface border border-border rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-hidden focus:border-primary shadow-xs"
+          className="w-full bg-background border border-border rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-hidden focus:border-primary shadow-xs font-sans text-foreground"
         />
-        <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-muted" />
       </div>
 
       {/* Grid List View */}
       {loading ? (
         <div className="flex justify-center py-12">
-          <span className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <span className="h-6 w-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
         </div>
       ) : (
-        <div className="bg-surface border border-border rounded-xl overflow-hidden shadow-xs">
+        <div className="bg-background border border-border rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse font-sans">
               <thead>
-                <tr className="bg-surface-hover/50 border-b border-border text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <tr className="bg-surface/10 border-b border-border text-[10px] font-extrabold uppercase tracking-widest text-muted">
                   <th className="px-6 py-4">Subscriber</th>
                   <th className="px-6 py-4">Date Joined</th>
                   <th className="px-6 py-4 text-right">Actions</th>
@@ -120,26 +120,26 @@ export default function SubscribersClient({ initialSubscribers }: SubscribersCli
               </thead>
               <tbody className="divide-y divide-border text-sm">
                 {subscribers.map((sub) => (
-                  <tr key={sub._id} className="hover:bg-surface-hover/30 transition-colors">
+                  <tr key={sub._id} className="hover:bg-surface/20 transition-colors">
                     <td className="px-6 py-4 flex items-center space-x-3">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                        <UserCheck className="h-4.5 w-4.5" />
+                      <div className="h-8 w-8 rounded-full border border-border text-muted flex items-center justify-center">
+                        <UserCheck className="h-4 w-4 stroke-[1.5]" />
                       </div>
                       <span className="font-bold text-foreground">{sub.email}</span>
                     </td>
-                    <td className="px-6 py-4 text-muted-foreground">
-                      <span className="flex items-center space-x-1.5">
-                        <Calendar className="h-4 w-4" />
+                    <td className="px-6 py-4 text-muted font-semibold">
+                      <span className="flex items-center space-x-1.5 text-xs">
+                        <Calendar className="h-3.5 w-3.5" />
                         <span>{formatDate(sub.subscribedAt)}</span>
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => handleDelete(sub._id)}
-                        className="p-2 border border-border rounded-lg hover:bg-red-500/10 text-muted-foreground hover:text-red-500 transition-colors cursor-pointer"
+                        className="p-1.5 border border-border rounded-md hover:bg-red-500/10 text-muted hover:text-red-500 hover:border-red-500/20 transition-all cursor-pointer"
                         title="Delete subscriber"
                       >
-                        <Trash2 className="h-4.5 w-4.5" />
+                        <Trash2 className="h-3.5 w-3.5 stroke-[1.5]" />
                       </button>
                     </td>
                   </tr>
@@ -149,7 +149,7 @@ export default function SubscribersClient({ initialSubscribers }: SubscribersCli
           </div>
 
           {subscribers.length === 0 && (
-            <div className="text-center py-16 text-muted-foreground">
+            <div className="text-center py-16 text-muted font-semibold">
               No active subscribers found matching your criteria.
             </div>
           )}
