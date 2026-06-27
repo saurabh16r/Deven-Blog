@@ -16,7 +16,7 @@ import {
   Image as ImageIcon,
   Code
 } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
 
 interface TiptapEditorProps {
   content: string;
@@ -24,6 +24,10 @@ interface TiptapEditorProps {
 }
 
 export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -69,34 +73,86 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
   };
 
   // Drag and Drop Upload Handler
-  const handleDrop = async (e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
-    if (!file || !file.type.startsWith('image/')) return;
+    if (!file) return;
+
+    setUploadError(null);
+
+    // Client-side validation: Type check
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Validation Error: Only image files are allowed.');
+      return;
+    }
+
+    // Client-side validation: Size check (10MB limit)
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setUploadError('Validation Error: File size exceeds the maximum limit of 10MB.');
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(0);
 
     const formData = new FormData();
     formData.append('file', file);
 
-    try {
-      const res = await fetch('/api/media', {
-        method: 'POST',
-        body: formData
-      });
-      if (res.ok) {
-        const data = await res.json();
-        editor.chain().focus().setImage({ src: data.url }).run();
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        setUploadProgress(percent);
       }
-    } catch (err) {
-      console.error('Drag and drop upload failed:', err);
-    }
+    });
+
+    xhr.onload = () => {
+      setUploading(false);
+      setUploadProgress(null);
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          editor.chain().focus().setImage({ src: data.url }).run();
+        } catch (err) {
+          setUploadError('Upload failed: Invalid response from server.');
+        }
+      } else {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          setUploadError(data.error || 'Upload failed.');
+        } catch {
+          setUploadError(`Upload failed with status code ${xhr.status}.`);
+        }
+      }
+    };
+
+    xhr.onerror = () => {
+      setUploading(false);
+      setUploadProgress(null);
+      setUploadError('Network error occurred during upload.');
+    };
+
+    xhr.open('POST', '/api/media');
+    xhr.send(formData);
   };
 
   return (
     <div 
-      className="border border-border rounded-xl bg-background overflow-hidden focus-within:border-primary/60 transition-colors"
+      className="relative border border-border rounded-xl bg-background overflow-hidden focus-within:border-primary/60 transition-colors"
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
+      {uploading && (
+        <div className="absolute inset-0 bg-background/70 backdrop-blur-xs flex flex-col items-center justify-center z-50 space-y-3 font-sans">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="text-xs font-bold text-foreground">
+            Uploading image... {uploadProgress !== null ? `${uploadProgress}%` : ''}
+          </span>
+        </div>
+      )}
+
       {/* Rich Editor Toolbar */}
       <div className="flex flex-wrap items-center gap-1.5 p-2.5 bg-surface border-b border-border text-muted-foreground shrink-0">
         <button
@@ -202,6 +258,13 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
           <ImageIcon className="h-4 w-4" />
         </button>
       </div>
+
+      {uploadError && (
+        <div className="bg-red-500/10 border-b border-red-500/30 text-red-500 px-4 py-2 text-xs font-sans font-semibold flex items-center justify-between">
+          <span>⚠️ {uploadError}</span>
+          <button onClick={() => setUploadError(null)} className="hover:text-red-400 font-bold select-none cursor-pointer">✕</button>
+        </div>
+      )}
 
       {/* Editor Content Area */}
       <div className="p-4 sm:p-6 bg-background min-h-[300px] cursor-text">

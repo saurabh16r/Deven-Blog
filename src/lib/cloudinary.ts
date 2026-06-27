@@ -17,8 +17,7 @@ if (isConfigured) {
 
 export async function uploadImage(fileUri: string): Promise<string> {
   if (!isConfigured) {
-    console.warn('Cloudinary credentials missing. Returning local path or mock fallback.');
-    return fileUri;
+    throw new Error('Cloudinary credentials are not configured. Please check CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.');
   }
   
   try {

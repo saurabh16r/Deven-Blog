@@ -79,6 +79,7 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
 
   const [tagInput, setTagInput] = useState(blog?.tags.join(', ') || '');
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [generatingSummary, setGeneratingSummary] = useState(false);
   const [generatingAudio, setGeneratingAudio] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -126,31 +127,79 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
   };
 
   // Image Upload Proxy Trigger
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, targetField: 'coverImage' | 'ogImage') => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, targetField: 'coverImage' | 'ogImage') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Reset feedback messages
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    // Client-side validation: Type check
+    if (!file.type.startsWith('image/')) {
+      setErrorMsg('Validation Error: Only image files are allowed.');
+      if (e.target) e.target.value = '';
+      return;
+    }
+
+    // Client-side validation: Size check (10MB limit)
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setErrorMsg('Validation Error: File size exceeds the maximum limit of 10MB.');
+      if (e.target) e.target.value = '';
+      return;
+    }
+
     setUploadingImage(true);
+    setUploadProgress(0);
+
     const form = new FormData();
     form.append('file', file);
 
-    try {
-      const res = await fetch('/api/media', {
-        method: 'POST',
-        body: form
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setFormData(prev => ({ ...prev, [targetField]: data.url }));
-        if (targetField === 'coverImage' && !formData.ogImage) {
-          setFormData(prev => ({ ...prev, ogImage: data.url }));
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        setUploadProgress(percent);
+      }
+    });
+
+    xhr.onload = () => {
+      setUploadingImage(false);
+      setUploadProgress(null);
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          setFormData(prev => ({ ...prev, [targetField]: data.url }));
+          if (targetField === 'coverImage' && !formData.ogImage) {
+            setFormData(prev => ({ ...prev, ogImage: data.url }));
+          }
+          setSuccessMsg('Image uploaded successfully to Cloudinary!');
+          setTimeout(() => setSuccessMsg(''), 3000);
+        } catch (err) {
+          setErrorMsg('Upload failed: Invalid response from server.');
+        }
+      } else {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          setErrorMsg(data.error || 'Upload failed.');
+        } catch {
+          setErrorMsg(`Upload failed with status code ${xhr.status}.`);
         }
       }
-    } catch (err) {
-      console.error('Upload failed:', err);
-    } finally {
+      if (e.target) e.target.value = '';
+    };
+
+    xhr.onerror = () => {
       setUploadingImage(false);
-    }
+      setUploadProgress(null);
+      setErrorMsg('Network error occurred during upload.');
+      if (e.target) e.target.value = '';
+    };
+
+    xhr.open('POST', '/api/media');
+    xhr.send(form);
   };
 
   // OpenAI Summary Trigger
@@ -521,7 +570,7 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
                   className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-border rounded-lg text-xs font-bold text-foreground hover:bg-surface cursor-pointer transition-colors shadow-xs"
                 >
                   <Upload className="h-4 w-4 stroke-[1.5]" />
-                  <span>{uploadingImage ? 'Uploading image...' : 'Upload cover image'}</span>
+                  <span>{uploadingImage ? `Uploading image... ${uploadProgress !== null ? `${uploadProgress}%` : ''}` : 'Upload cover image'}</span>
                 </label>
               </div>
             </div>

@@ -23,38 +23,82 @@ export default function MediaClient() {
   
   const [search, setSearch] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setErrorMsg(null);
+
+    // Client-side validation: Type check
+    if (!file.type.startsWith('image/')) {
+      setErrorMsg('Validation Error: Only image files are allowed.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    // Client-side validation: Size check (10MB limit)
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setErrorMsg('Validation Error: File size exceeds the maximum limit of 10MB.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
     setUploading(true);
+    setUploadProgress(0);
     const formData = new FormData();
     formData.append('file', file);
 
-    try {
-      const res = await fetch('/api/media', {
-        method: 'POST',
-        body: formData
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const newAsset: ImageAsset = {
-          id: `img-${Date.now()}`,
-          url: data.url,
-          name: file.name,
-          size: `${Math.round(file.size / 1024)} KB`
-        };
-        setImages(prev => [newAsset, ...prev]);
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        setUploadProgress(percent);
       }
-    } catch (error) {
-      console.error('Upload error:', error);
-    } finally {
+    });
+
+    xhr.onload = () => {
       setUploading(false);
+      setUploadProgress(null);
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          const newAsset: ImageAsset = {
+            id: `img-${Date.now()}`,
+            url: data.url,
+            name: file.name,
+            size: `${Math.round(file.size / 1024)} KB`
+          };
+          setImages(prev => [newAsset, ...prev]);
+        } catch (err) {
+          setErrorMsg('Upload failed: Invalid response from server.');
+        }
+      } else {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          setErrorMsg(data.error || 'Upload failed.');
+        } catch {
+          setErrorMsg(`Upload failed with status code ${xhr.status}.`);
+        }
+      }
       if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+    };
+
+    xhr.onerror = () => {
+      setUploading(false);
+      setUploadProgress(null);
+      setErrorMsg('Network error occurred during upload.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    xhr.open('POST', '/api/media');
+    xhr.send(formData);
   };
 
   const handleDelete = async (id: string) => {
@@ -95,10 +139,18 @@ export default function MediaClient() {
             className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 text-xs font-bold bg-primary hover:bg-primary-hover text-primary-foreground transition-all rounded-lg cursor-pointer disabled:opacity-50"
           >
             <Upload className="h-4.5 w-4.5" />
-            <span>{uploading ? 'Uploading...' : 'Upload Image'}</span>
+            <span>{uploading ? `Uploading... ${uploadProgress !== null ? `${uploadProgress}%` : ''}` : 'Upload Image'}</span>
           </button>
         </div>
       </div>
+
+      {/* Error Alert Box */}
+      {errorMsg && (
+        <div className="bg-red-500/10 border border-red-500/30 text-red-500 p-3.5 rounded-lg text-xs font-sans font-semibold flex items-center gap-2">
+          <span>⚠️ {errorMsg}</span>
+          <button onClick={() => setErrorMsg(null)} className="ml-auto hover:text-red-400 font-bold select-none cursor-pointer">✕</button>
+        </div>
+      )}
 
       {/* Searching Bar */}
       <div className="relative max-w-md w-full">
