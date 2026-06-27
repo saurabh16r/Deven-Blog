@@ -5,21 +5,32 @@ import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
 
 interface AudioPlayerProps {
   audioUrl: string;
+  isPreviewOnly?: boolean;
 }
 
-export default function AudioPlayer({ audioUrl }: AudioPlayerProps) {
+export default function AudioPlayer({ audioUrl, isPreviewOnly = false }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
+  const [audioLocked, setAudioLocked] = useState(false);
 
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.playbackRate = playbackRate;
     }
   }, [playbackRate]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      setDuration(isPreviewOnly ? Math.min(30, audioRef.current.duration) : audioRef.current.duration);
+      if (!isPreviewOnly) {
+        setAudioLocked(false);
+      }
+    }
+  }, [isPreviewOnly]);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -34,19 +45,39 @@ export default function AudioPlayer({ audioUrl }: AudioPlayerProps) {
 
   const handleTimeUpdate = () => {
     if (!audioRef.current) return;
+    
+    if (isPreviewOnly && audioRef.current.currentTime >= 30) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 30;
+      setIsPlaying(false);
+      setAudioLocked(true);
+      setCurrentTime(30);
+      return;
+    }
+    
     setCurrentTime(audioRef.current.currentTime);
   };
 
   const handleLoadedMetadata = () => {
     if (!audioRef.current) return;
-    setDuration(audioRef.current.duration);
+    // For free users, visual duration is at most 30s
+    setDuration(isPreviewOnly ? Math.min(30, audioRef.current.duration) : audioRef.current.duration);
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!audioRef.current) return;
     const time = parseFloat(e.target.value);
+    
+    if (isPreviewOnly && time >= 30) {
+      audioRef.current.currentTime = 30;
+      setCurrentTime(30);
+      setAudioLocked(true);
+      return;
+    }
+    
     audioRef.current.currentTime = time;
     setCurrentTime(time);
+    setAudioLocked(false);
   };
 
   const toggleMute = () => {
@@ -142,6 +173,12 @@ export default function AudioPlayer({ audioUrl }: AudioPlayerProps) {
           </button>
         </div>
       </div>
+
+      {audioLocked && (
+        <div className="text-[10px] text-primary font-bold flex items-center justify-center gap-1.5 pt-2.5 mt-2.5 border-t border-neutral-800 dark:border-[#2C2C2F] text-center select-none">
+          <span>🔒 30-second preview ended. Upgrade to Premium to listen to the full briefing.</span>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,8 +6,7 @@ import Navbar from '../layout/Navbar';
 import Footer from '../layout/Footer';
 import ArticleCard from '../blog/ArticleCard';
 import { motion } from 'framer-motion';
-import { Clock, Calendar, Mail, ArrowRight, Check, AlertCircle } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
+import { Mail, Check, AlertCircle } from 'lucide-react';
 
 interface BlogType {
   _id: string;
@@ -43,16 +42,6 @@ export default function HomeClient({ initialBlogs, initialCategories }: HomeClie
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
-
-  // 1. Identify Featured Story (explicitly featured or first)
-  const featuredStory = blogs.find(b => b.featured) || blogs[0];
-
-  // 2. Identify Secondary Stories (next two blogs, excluding featured)
-  const remainingBlogs = blogs.filter(b => b._id !== featuredStory?._id);
-  const secondaryStories = remainingBlogs.slice(0, 2);
-
-  // 3. Identify Bottom Cards (next three blogs)
-  const bottomStories = remainingBlogs.slice(2, 5);
 
   // 4. Filter Articles by Category when filtering
   const filteredArticles = blogs.filter(b => {
@@ -179,103 +168,23 @@ export default function HomeClient({ initialBlogs, initialCategories }: HomeClie
       {/* Latest Briefings / Editorial Layout */}
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
         {selectedCategory === 'All' ? (
-          <div className="space-y-16">
+          <div className="space-y-12">
             {/* Editorial Title */}
             <div className="flex justify-between items-baseline border-b border-border pb-4">
               <h2 className="text-xl sm:text-2xl font-serif font-black tracking-tight text-foreground">
                 Latest Briefings
               </h2>
-              <Link href="/articles" className="text-xs uppercase font-extrabold tracking-wider text-muted hover:text-foreground transition-colors flex items-center gap-1">
-                View Archive <ArrowRight className="h-3.5 w-3.5" />
+              <Link href="/articles" className="text-sm font-bold tracking-wide text-muted hover:text-foreground transition-colors">
+                View All →
               </Link>
             </div>
 
-            {/* Top Grid: 1 Featured (Left 2/3) + 2 Secondary (Right 1/3) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-              
-              {/* Featured Story */}
-              {featuredStory && (
-                <div className="lg:col-span-2 space-y-6">
-                  <div className="relative aspect-video w-full rounded-lg overflow-hidden border border-border bg-surface">
-                    <Link href={`/articles/${featuredStory.slug}`}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={featuredStory.coverImage}
-                        alt={featuredStory.title}
-                        className="object-cover w-full h-full hover:scale-101 transition-transform duration-500"
-                        loading="eager"
-                      />
-                    </Link>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3 text-xs text-muted font-semibold">
-                      <span className="text-primary font-bold uppercase tracking-wider">
-                        {featuredStory.category}
-                      </span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {formatDate(featuredStory.createdAt)}
-                      </span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5" />
-                        {featuredStory.readingTime} min read
-                      </span>
-                    </div>
-
-                    <h3 className="text-2xl sm:text-4xl font-serif font-black text-foreground hover:text-primary transition-colors leading-tight">
-                      <Link href={`/articles/${featuredStory.slug}`}>{featuredStory.title}</Link>
-                    </h3>
-
-                    <p className="text-muted text-sm sm:text-base leading-relaxed line-clamp-3 font-medium">
-                      {featuredStory.excerpt}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Secondary Stories Stack */}
-              <div className="space-y-8 divide-y divide-border lg:divide-y-0">
-                {secondaryStories.map((story, idx) => (
-                  <div key={story._id} className={`space-y-4 ${idx > 0 ? 'pt-8 lg:pt-0 border-t border-border lg:border-t-0' : ''}`}>
-                    <div className="relative aspect-video sm:aspect-21/9 lg:aspect-video w-full rounded-lg overflow-hidden border border-border bg-surface">
-                      <Link href={`/articles/${story.slug}`}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={story.coverImage}
-                          alt={story.title}
-                          className="object-cover w-full h-full hover:scale-101 transition-transform duration-500"
-                          loading="lazy"
-                        />
-                      </Link>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-3 text-xs text-muted font-semibold">
-                        <span className="text-primary font-bold uppercase tracking-wider">{story.category}</span>
-                        <span>•</span>
-                        <span>{story.readingTime} min read</span>
-                      </div>
-                      <h4 className="text-lg sm:text-xl font-serif font-black text-foreground hover:text-primary transition-colors leading-snug">
-                        <Link href={`/articles/${story.slug}`}>{story.title}</Link>
-                      </h4>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
+            {/* Clean Editorial Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {blogs.slice(0, 9).map((article) => (
+                <ArticleCard key={article._id} article={article} />
+              ))}
             </div>
-
-            {/* Bottom Row: 3 Article Cards */}
-            {bottomStories.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-12 border-t border-border">
-                {bottomStories.map((article) => (
-                  <ArticleCard key={article._id} article={article} />
-                ))}
-              </div>
-            )}
           </div>
         ) : (
           /* Filtered Category Grid */

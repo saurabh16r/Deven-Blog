@@ -1,7 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
 
 const SettingSchema = new Schema({
-  siteName: { type: String, default: 'FounderBrief' },
+  siteName: { type: String, default: 'Deven' },
   logo: { type: String, default: '' },
   primaryColor: { type: String, default: '#FFC247' },
   newsletterEnabled: { type: Boolean, default: true },
@@ -13,7 +13,7 @@ const SettingSchema = new Schema({
     github: { type: String, default: '' }
   },
   seoDefaults: {
-    title: { type: String, default: 'FounderBrief - The smartest startup insights' },
+    title: { type: String, default: 'Deven - The smartest startup insights' },
     description: { type: String, default: 'Actionable startup breakdowns delivered weekly.' }
   },
   analyticsScript: { type: String, default: '' }

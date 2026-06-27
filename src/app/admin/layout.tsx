@@ -62,7 +62,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </button>
             </div>
             <p className="text-xs uppercase font-extrabold tracking-wider text-muted font-sans select-none">
-              FounderBrief Editor
+            Deven Editor
             </p>
           </div>
 
@@ -142,7 +142,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Menu className="h-6 w-6" />
           </button>
           <span className="font-serif font-black text-base text-foreground select-none">
-            FounderBrief Admin
+            Deven Admin
           </span>
           <div className="w-8" /> {/* Spacer */}
         </header>

@@ -1,36 +1,52 @@
 import React from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import connectDB from '@/lib/db';
-import { Blog } from '@/lib/models';
+import { Blog, User, Bookmark } from '@/lib/models';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import ReadingProgressBar from '@/components/blog/ReadingProgressBar';
 import ShareButtons from '@/components/blog/ShareButtons';
 import AISummary from '@/components/blog/AISummary';
-import AudioPlayer from '@/components/blog/AudioPlayer';
-import { formatDate, slugify } from '@/lib/utils';
-import { Share2, Bookmark } from 'lucide-react';
+import BookmarkButton from '@/components/blog/BookmarkButton';
+import HistoryTracker from '@/components/blog/HistoryTracker';
+import ArticleContentClient from '@/components/blog/ArticleContentClient';
+import { formatDate, slugify, injectHeadingIds } from '@/lib/utils';
+import { Share2 } from 'lucide-react';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export const revalidate = 0;
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-function injectHeadingIds(html: string): string {
+function scrambleHTML(html: string): string {
   if (!html) return '';
-  return html.replace(/<h2>(.*?)<\/h2>/g, (match, titleText) => {
-    const cleanText = titleText.replace(/<[^>]*>/g, '');
-    const id = slugify(cleanText);
-    return `<h2 id="${id}" class="scroll-mt-24 font-serif font-black text-2xl border-b border-border pb-1 mt-8 mb-4 text-foreground">${titleText}</h2>`;
+  return html.replace(/>([^<]+)</g, (match, text) => {
+    const scrambled = text.replace(/[a-zA-Z0-9]/g, (char: string) => {
+      if (/\s/.test(char)) return char;
+      const chars = 'abcdefghijklmnopqrstuvwxyz';
+      return chars[Math.floor(Math.random() * chars.length)];
+    });
+    return `>${scrambled}<`;
   });
 }
 
-export default async function ArticleDetailPage({ params }: PageProps) {
+export default async function ArticleDetailPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const search = await searchParams;
+  const session = await getServerSession(authOptions);
+  
   let blog: any = null;
   let relatedArticles: any[] = [];
+  let isBookmarked = false;
+  let isLocked = false;
+  let showPaywall = false;
+  let paywallReason = 'visitor'; // 'visitor' or 'premium'
 
   await connectDB();
   
@@ -44,7 +60,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
   if (dbBlog) {
     blog = JSON.parse(JSON.stringify(dbBlog));
     
-    // Fetch only 2 related articles as per "Two related articles. Editorial list."
+    // Fetch only 2 related articles
     const dbRelated = await Blog.find({
       published: true,
       slug: { $ne: slug },
@@ -66,6 +82,50 @@ export default async function ArticleDetailPage({ params }: PageProps) {
       .lean();
       relatedArticles = [...relatedArticles, ...JSON.parse(JSON.stringify(extraRelated))];
     }
+
+    // Check user authenticated paywall and bookmarks
+    if (session?.user) {
+      const dbUser = await User.findOne({ email: session.user.email }).lean();
+      if (dbUser) {
+        const existingBookmark = await Bookmark.findOne({ 
+          userId: dbUser._id, 
+          articleId: dbBlog._id 
+        }).lean();
+        isBookmarked = !!existingBookmark;
+        
+        // Show premium paywall if user is not premium
+        if (dbUser.plan !== 'premium') {
+          // If they just logged in from the paywall card, redirect them to pricing page
+          if (search.login === '1') {
+            redirect('/pricing');
+          }
+          
+          isLocked = true;
+          showPaywall = true;
+          paywallReason = 'premium';
+        }
+      }
+    } else {
+      // Visitor limit: check cookie array of read slugs
+      const cookieStore = await cookies();
+      const rawReadSlugs = cookieStore.get('fb_read_slugs')?.value;
+      let readSlugs: string[] = [];
+      
+      try {
+        if (rawReadSlugs) {
+          readSlugs = JSON.parse(decodeURIComponent(rawReadSlugs));
+        }
+      } catch (e) {
+        readSlugs = [];
+      }
+      
+      // Lock if 3rd unique article
+      if (!readSlugs.includes(slug) && readSlugs.length >= 2) {
+        isLocked = true;
+        showPaywall = true;
+        paywallReason = 'visitor';
+      }
+    }
   }
 
   if (!blog) {
@@ -74,6 +134,21 @@ export default async function ArticleDetailPage({ params }: PageProps) {
 
   // Inject IDs into the heading tags client side scrollspy
   const contentWithIds = injectHeadingIds(blog.content);
+
+  // Split and scramble content if locked
+  let freeContent = contentWithIds;
+  let blurredContent = '';
+  if (isLocked) {
+    const paragraphs = contentWithIds.split('</p>');
+    if (paragraphs.length > 2) {
+      freeContent = paragraphs.slice(0, 2).map((p: string) => p + '</p>').join('');
+      const remainingRaw = paragraphs.slice(2).map((p: string) => p + '</p>').join('');
+      blurredContent = scrambleHTML(remainingRaw);
+    } else {
+      freeContent = contentWithIds.slice(0, Math.floor(contentWithIds.length * 0.25));
+      blurredContent = scrambleHTML(contentWithIds.slice(Math.floor(contentWithIds.length * 0.25)));
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground relative">
@@ -118,12 +193,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
               >
                 <Share2 className="h-4 w-4 stroke-[1.5]" />
               </button>
-              <button 
-                className="p-2 border border-border hover:bg-surface rounded-full transition-colors cursor-pointer text-muted hover:text-foreground"
-                title="Bookmark briefing"
-              >
-                <Bookmark className="h-4 w-4 stroke-[1.5]" />
-              </button>
+              <BookmarkButton articleId={blog._id} initialBookmarked={isBookmarked} />
             </div>
           </div>
 
@@ -139,7 +209,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
               />
             </div>
             <p className="text-center text-xs italic text-muted leading-relaxed font-serif pt-1">
-              Cover illustration for {blog.title}. Photo by FounderBrief Editorial.
+              Cover illustration for {blog.title}. Photo by Deven Editorial.
             </p>
           </div>
 
@@ -149,16 +219,17 @@ export default async function ArticleDetailPage({ params }: PageProps) {
             enabled={blog.aiSummaryEnabled}
           />
 
-          {/* Custom TTS Voice player */}
-          <AudioPlayer
+          {/* Article Content with Dynamic Client Paywall & Audio narration */}
+          <ArticleContentClient
+            slug={slug}
+            initialLocked={isLocked}
+            freeContent={freeContent}
+            blurredContent={blurredContent}
             audioUrl={blog.audioUrl}
           />
 
-          {/* Editorial Content Body */}
-          <div 
-            className="ProseMirror editorial-text text-foreground/90 leading-relaxed font-sans"
-            dangerouslySetInnerHTML={{ __html: contentWithIds }}
-          />
+          <HistoryTracker articleId={blog._id} slug={blog.slug} />
+
 
           {/* Tag Badges Footer */}
           {blog.tags && blog.tags.length > 0 && (

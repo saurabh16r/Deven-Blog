@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { AuthProvider } from "@/components/AuthProvider";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -14,7 +15,7 @@ const sourceSerif4 = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
-  title: "FounderBrief - The smartest startup insights in 5 minutes",
+  title: "Deven - The smartest startup insights in 5 minutes",
   description: "Actionable startup breakdowns, AI trends, growth strategies, fundraising lessons, and founder stories delivered weekly.",
 };
 
@@ -30,12 +31,15 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground transition-colors duration-300">
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );
 }
+
 
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link2, Check } from 'lucide-react';
 
 interface ShareButtonsProps {
@@ -9,6 +9,11 @@ interface ShareButtonsProps {
 
 export default function ShareButtons({ title }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleCopyLink = () => {
     if (typeof window === 'undefined') return;
@@ -18,14 +23,14 @@ export default function ShareButtons({ title }: ShareButtonsProps) {
   };
 
   const getTwitterUrl = () => {
-    if (typeof window === 'undefined') return '#';
+    if (!mounted || typeof window === 'undefined') return '#';
     return `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-      `Read "${title}" on FounderBrief: `
+      `Read "${title}" on Deven: `
     )}&url=${encodeURIComponent(window.location.href)}`;
   };
 
   const getLinkedinUrl = () => {
-    if (typeof window === 'undefined') return '#';
+    if (!mounted || typeof window === 'undefined') return '#';
     return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
       window.location.href
     )}`;

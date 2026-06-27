@@ -27,7 +27,7 @@ export async function generateSummary(title: string, htmlContent: string): Promi
     console.warn('GEMINI_API_KEY is missing. Generating mock summary takeaways.');
     return [
       "Key Takeaways",
-      `• FounderBrief delivers concise startup insights in 5 minutes based on "${title}".`,
+      `• Deven delivers concise startup insights in 5 minutes based on "${title}".`,
       "• Consistently tracking user metrics helps modern businesses iterate rapidly.",
       "• Automation and AI integration are transforming content discovery for digital brands.",
       "• Establishing early newsletter relationships creates a defensible community moat.",

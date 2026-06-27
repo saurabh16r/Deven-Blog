@@ -4,7 +4,7 @@ import { Setting } from '@/lib/models';
 
 const defaultSettings = {
   _id: 'default',
-  siteName: 'FounderBrief',
+  siteName: 'Deven',
   logo: '',
   primaryColor: '#FFC247',
   newsletterEnabled: true,
@@ -12,7 +12,7 @@ const defaultSettings = {
   aiSummaryEnabled: true,
   socialLinks: { twitter: 'https://twitter.com', linkedin: 'https://linkedin.com', github: 'https://github.com' },
   seoDefaults: {
-    title: 'FounderBrief - The smartest startup insights',
+    title: 'Deven - The smartest startup insights',
     description: 'Actionable startup breakdowns delivered weekly.'
   },
   analyticsScript: ''

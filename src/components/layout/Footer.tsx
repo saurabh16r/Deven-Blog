@@ -21,7 +21,7 @@ export default function Footer() {
       <div className="max-w-4xl mx-auto px-4 text-center space-y-6">
         {/* Centered Serif Logo */}
         <div className="font-serif font-black text-2xl sm:text-3xl tracking-tight text-foreground select-none">
-          FounderBrief
+          Deven
         </div>
 
         {/* Flat navigation links */}
@@ -32,7 +32,7 @@ export default function Footer() {
           <Link href="/terms" className="text-[#6B6258] dark:text-[#D4D4D4] hover:text-[#1F1A17] dark:hover:text-[#FFC247] transition-colors">
             Terms of Service
           </Link>
-          <a href="mailto:hello@founderbrief.com" className="text-[#6B6258] dark:text-[#D4D4D4] hover:text-[#1F1A17] dark:hover:text-[#FFC247] transition-colors">
+          <a href="mailto:hello@deven.com" className="text-[#6B6258] dark:text-[#D4D4D4] hover:text-[#1F1A17] dark:hover:text-[#FFC247] transition-colors">
             Contact
           </a>
           <a href="#newsletter-section" onClick={handleNewsletterClick} className="text-[#6B6258] dark:text-[#D4D4D4] hover:text-[#1F1A17] dark:hover:text-[#FFC247] transition-colors">
@@ -45,7 +45,7 @@ export default function Footer() {
 
         {/* Copyright details */}
         <div className="space-y-1 text-xs text-muted">
-          <p>&copy; {currentYear} FounderBrief Editorial. All rights reserved.</p>
+          <p>&copy; {currentYear} Deven Editorial. All rights reserved.</p>
           <p className="font-medium text-[10px] tracking-wide uppercase opacity-75">Dedicated to the founders of tomorrow.</p>
         </div>
 

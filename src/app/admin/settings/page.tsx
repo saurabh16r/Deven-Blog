@@ -20,7 +20,7 @@ export default async function AdminSettingsPage() {
 
   if (!settings) {
     settings = {
-      siteName: 'FounderBrief',
+      siteName: 'Deven',
       logo: '',
       primaryColor: '#FFC247',
       newsletterEnabled: true,
@@ -28,7 +28,7 @@ export default async function AdminSettingsPage() {
       aiSummaryEnabled: true,
       socialLinks: { twitter: 'https://twitter.com', linkedin: 'https://linkedin.com', github: 'https://github.com' },
       seoDefaults: {
-        title: 'FounderBrief - The smartest startup insights',
+        title: 'Deven - The smartest startup insights',
         description: 'Actionable startup breakdowns delivered weekly.'
       },
       analyticsScript: ''

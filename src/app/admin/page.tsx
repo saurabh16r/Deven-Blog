@@ -49,7 +49,7 @@ export default async function AdminDashboardPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-6">
         <div className="space-y-1">
           <h1 className="text-3xl font-serif font-black tracking-tight">Overview</h1>
-          <p className="text-muted text-sm font-sans font-medium">Welcome back. Here is what is happening with FounderBrief.</p>
+          <p className="text-muted text-sm font-sans font-medium">Welcome back. Here is what is happening with Deven.</p>
         </div>
         <Link
           href="/admin/blogs/new"

@@ -35,3 +35,12 @@ export function slugify(text: string): string {
     .replace(/^-+/, '')              // Trim - from start
     .replace(/-+$/, '');             // Trim - from end
 }
+
+export function injectHeadingIds(html: string): string {
+  if (!html) return '';
+  return html.replace(/<h2>(.*?)<\/h2>/g, (match, titleText) => {
+    const cleanText = titleText.replace(/<[^>]*>/g, '');
+    const id = slugify(cleanText);
+    return `<h2 id="${id}" class="scroll-mt-24 font-serif font-black text-2xl border-b border-border pb-1 mt-8 mb-4 text-foreground">${titleText}</h2>`;
+  });
+}

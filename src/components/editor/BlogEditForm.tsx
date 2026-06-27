@@ -92,7 +92,7 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
       const next: any = { ...prev, title: val };
       if (!isEdit) {
         next.slug = slugify(val);
-        next.seoTitle = `${val} - FounderBrief`;
+        next.seoTitle = `${val} - Deven`;
       }
       return next;
     });

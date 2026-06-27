@@ -3,7 +3,7 @@ import connectDB from '@/lib/db';
 import { Blog } from '@/lib/models';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://founderbrief.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://deven.com';
   
   let blogs = [];
   try {
