@@ -163,13 +163,12 @@ function LoginFormContent() {
             />
             <span>Remember Me</span>
           </label>
-          <button
-            type="button"
-            onClick={() => setError('Password reset instructions will be sent to your email.')}
+          <Link
+            href="/forgot-password"
             className="text-muted hover:text-foreground hover:underline transition-all"
           >
             Forgot Password?
-          </button>
+          </Link>
         </div>
 
         {/* Submit Button */}
