@@ -77,7 +77,12 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo on Left */}
           <div className="flex-shrink-0">
-            <Link href="/" className="flex items-center space-x-1.5 group">
+            <Link href="/" className="flex items-center space-x-2 group">
+              <img
+                src="/deven-logo.png"
+                alt="Deven Logo"
+                className="h-8 w-8 object-contain group-hover:scale-105 transition-transform duration-200"
+              />
               <span className="font-serif font-black text-2xl tracking-tight text-foreground transition-all duration-200">
                 Deven
               </span>

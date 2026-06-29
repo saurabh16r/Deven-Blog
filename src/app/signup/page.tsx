@@ -242,8 +242,15 @@ export default function SignupPage() {
     <div className="min-h-screen bg-background flex flex-col justify-center items-center px-4 py-12">
       {/* Brand logo at top */}
       <div className="mb-8">
-        <Link href="/" className="font-serif font-black text-2xl tracking-tight text-foreground">
-          Deven
+        <Link href="/" className="flex items-center space-x-2 group">
+          <img
+            src="/deven-logo.png"
+            alt="Deven Logo"
+            className="h-10 w-10 object-contain group-hover:scale-105 transition-transform duration-200"
+          />
+          <span className="font-serif font-black text-3xl tracking-tight text-foreground">
+            Deven
+          </span>
         </Link>
       </div>
 
