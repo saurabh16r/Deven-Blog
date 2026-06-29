@@ -165,11 +165,11 @@ export async function POST(req: NextRequest) {
 
     if (!emailRes.success) {
       console.error('Failed to send email via Resend:', emailRes.error);
-      // Fallback for local testing without an active Resend API key
-      if (!process.env.RESEND_API_KEY) {
+      // Fallback for local testing / Resend sandbox constraints
+      if (process.env.NODE_ENV !== 'production') {
         return NextResponse.json({
           success: true,
-          message: "Dev Mode: Resend API key is missing. Code printed to your terminal log.",
+          message: "Dev Mode: Resend sandbox error. Check terminal logs for the code.",
         });
       }
       return NextResponse.json(
