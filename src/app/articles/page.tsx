@@ -1,6 +1,6 @@
 import React from 'react';
 import connectDB from '@/lib/db';
-import { Blog, Category } from '@/lib/models';
+import { Blog, Category, Author } from '@/lib/models';
 import ArticlesClient from '@/components/blog/ArticlesClient';
 
 export const revalidate = 0;
@@ -52,6 +52,7 @@ export default async function ArticlesPage({
     .sort(sortQuery)
     .skip(skip)
     .limit(limit)
+    .populate('authorId')
     .lean();
     
   const blogs = JSON.parse(JSON.stringify(dbBlogs));

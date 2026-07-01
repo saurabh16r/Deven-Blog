@@ -1,11 +1,34 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import TiptapEditor from './TiptapEditor';
 import { slugify, calculateReadingTime } from '@/lib/utils';
-import { Save, Sparkles, Headphones, Upload, ArrowLeft, Check, AlertCircle } from 'lucide-react';
+import { Save, Sparkles, Headphones, Upload, ArrowLeft, Check, AlertCircle, X, Globe, ChevronDown, Search, User, Plus } from 'lucide-react';
 import Link from 'next/link';
+
+const LinkedInIcon = ({ className = "h-3.5 w-3.5" }: { className?: string }) => (
+  <svg className={`${className} fill-current`} viewBox="0 0 24 24">
+    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+  </svg>
+);
+
+const TwitterIcon = ({ className = "h-3.5 w-3.5" }: { className?: string }) => (
+  <svg className={`${className} fill-current`} viewBox="0 0 24 24">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+  </svg>
+);
+
+interface AuthorType {
+  _id: string;
+  name: string;
+  role: string;
+  avatar: string;
+  bio: string;
+  linkedin?: string;
+  twitter?: string;
+  website?: string;
+}
 
 interface BlogType {
   _id?: string;
@@ -16,6 +39,7 @@ interface BlogType {
   coverImage: string;
   category: string;
   tags: string[];
+  authorId: string;
   
   featured: boolean;
   published: boolean;
@@ -47,9 +71,10 @@ interface CategoryType {
 interface BlogEditFormProps {
   blog?: BlogType;
   categories: CategoryType[];
+  authors: AuthorType[];
 }
 
-export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
+export default function BlogEditForm({ blog, categories, authors }: BlogEditFormProps) {
   const router = useRouter();
   const isEdit = !!blog;
 
@@ -62,6 +87,7 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
     coverImage: blog?.coverImage || '',
     category: blog?.category || categories[0]?.name || 'Startups',
     tags: blog?.tags || [],
+    authorId: typeof blog?.authorId === 'object' && blog.authorId ? (blog.authorId as any)._id : (blog?.authorId || authors[0]?._id || ''),
     featured: blog?.featured || false,
     published: blog?.published || false,
     isTrending: blog?.isTrending || false,
@@ -76,6 +102,38 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
     seoDescription: blog?.seoDescription || '',
     ogImage: blog?.ogImage || ''
   });
+
+  // Author selection & creation states
+  const [localAuthors, setLocalAuthors] = useState<AuthorType[]>(authors);
+  const [authorSearch, setAuthorSearch] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  const [isAuthorModalOpen, setIsAuthorModalOpen] = useState(false);
+  const [newAuthorName, setNewAuthorName] = useState('');
+  const [newAuthorRole, setNewAuthorRole] = useState('');
+  const [newAuthorAvatar, setNewAuthorAvatar] = useState('');
+  const [newAuthorBio, setNewAuthorBio] = useState('');
+  const [newAuthorLinkedin, setNewAuthorLinkedin] = useState('');
+  const [newAuthorTwitter, setNewAuthorTwitter] = useState('');
+  const [newAuthorWebsite, setNewAuthorWebsite] = useState('');
+  const [authorUploading, setAuthorUploading] = useState(false);
+  const [authorUploadProgress, setAuthorUploadProgress] = useState<number | null>(null);
+  const [authorError, setAuthorError] = useState('');
+  const [authorSuccess, setAuthorSuccess] = useState('');
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const [tagInput, setTagInput] = useState(blog?.tags.join(', ') || '');
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -200,6 +258,122 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
 
     xhr.open('POST', '/api/media');
     xhr.send(form);
+  };
+
+  // Upload Author Avatar directly to Cloudinary
+  const handleAuthorAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setAuthorError('');
+
+    if (!file.type.startsWith('image/')) {
+      setAuthorError('Validation Error: Only image files are allowed.');
+      return;
+    }
+
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setAuthorError('Validation Error: File size exceeds the maximum limit of 5MB.');
+      return;
+    }
+
+    setAuthorUploading(true);
+    setAuthorUploadProgress(0);
+
+    const form = new FormData();
+    form.append('file', file);
+
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        setAuthorUploadProgress(percent);
+      }
+    });
+
+    xhr.onload = () => {
+      setAuthorUploading(false);
+      setAuthorUploadProgress(null);
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          setNewAuthorAvatar(data.url);
+        } catch (err) {
+          setAuthorError('Upload failed: Invalid response from server.');
+        }
+      } else {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          setAuthorError(data.error || 'Upload failed.');
+        } catch {
+          setAuthorError(`Upload failed with status code ${xhr.status}.`);
+        }
+      }
+    };
+
+    xhr.onerror = () => {
+      setAuthorUploading(false);
+      setAuthorUploadProgress(null);
+      setAuthorError('Network error occurred during upload.');
+    };
+
+    xhr.open('POST', '/api/media');
+    xhr.send(form);
+  };
+
+  // Submit new author form
+  const handleCreateAuthorSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAuthorName || !newAuthorRole || !newAuthorAvatar || !newAuthorBio) {
+      setAuthorError('Name, role, avatar, and bio are required.');
+      return;
+    }
+    setAuthorError('');
+    setAuthorSuccess('');
+    
+    try {
+      const res = await fetch('/api/authors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newAuthorName,
+          role: newAuthorRole,
+          avatar: newAuthorAvatar,
+          bio: newAuthorBio,
+          linkedin: newAuthorLinkedin,
+          twitter: newAuthorTwitter,
+          website: newAuthorWebsite
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create author.');
+      }
+      
+      // Update local authors list
+      setLocalAuthors(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+      // Select the new author automatically
+      setFormData(prev => ({ ...prev, authorId: data._id }));
+      
+      // Reset new author states
+      setNewAuthorName('');
+      setNewAuthorRole('');
+      setNewAuthorAvatar('');
+      setNewAuthorBio('');
+      setNewAuthorLinkedin('');
+      setNewAuthorTwitter('');
+      setNewAuthorWebsite('');
+      
+      setAuthorSuccess('Author created and selected successfully!');
+      setTimeout(() => {
+        setIsAuthorModalOpen(false);
+        setAuthorSuccess('');
+      }, 1500);
+    } catch (err: any) {
+      setAuthorError(err.message || 'Something went wrong.');
+    }
   };
 
   // OpenAI Summary Trigger
@@ -406,6 +580,166 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
                   className="w-full bg-background border border-border rounded-lg px-3.5 py-2 focus:outline-hidden focus:border-primary resize-none text-foreground"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Author Information Card */}
+          <div className="bg-background border border-border p-6 rounded-lg space-y-4">
+            <h3 className="text-xs uppercase font-extrabold tracking-widest text-muted pb-2 border-b border-border font-sans select-none">
+              Author Information
+            </h3>
+            
+            <div className="space-y-4 font-sans relative" ref={dropdownRef}>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Select Article Author</label>
+                
+                {/* Searchable Dropdown Selector Button */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className="w-full flex items-center justify-between bg-background border border-border rounded-lg px-3 py-2.5 text-sm font-semibold text-foreground hover:bg-surface/30 cursor-pointer transition-all"
+                  >
+                    {(() => {
+                      const selectedAuth = localAuthors.find(a => a._id === formData.authorId);
+                      if (selectedAuth) {
+                        return (
+                          <div className="flex items-center space-x-2.5">
+                            {selectedAuth.avatar ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={selectedAuth.avatar} alt={selectedAuth.name} className="h-6 w-6 rounded-full object-cover border border-border" />
+                            ) : (
+                              <div className="h-6 w-6 bg-primary text-black rounded-full flex items-center justify-center font-bold font-serif text-[10px] select-none">
+                                {selectedAuth.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </div>
+                            )}
+                            <span className="font-bold">{selectedAuth.name} ({selectedAuth.role})</span>
+                          </div>
+                        );
+                      }
+                      return <span className="text-muted">Choose an author...</span>;
+                    })()}
+                    <ChevronDown className={`h-4 w-4 text-muted transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* Dropdown Options Box */}
+                  {dropdownOpen && (
+                    <div className="absolute left-0 right-0 mt-1.5 z-40 bg-background border border-border rounded-lg shadow-xl overflow-hidden divide-y divide-border">
+                      {/* Search Bar */}
+                      <div className="p-2 bg-surface/20 flex items-center space-x-2">
+                        <Search className="h-3.5 w-3.5 text-muted shrink-0" />
+                        <input
+                          type="text"
+                          placeholder="Search contributors..."
+                          value={authorSearch}
+                          onChange={(e) => setAuthorSearch(e.target.value)}
+                          className="w-full bg-transparent border-0 outline-hidden text-xs text-foreground placeholder-muted font-medium"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+
+                      {/* Options List */}
+                      <div className="max-h-56 overflow-y-auto divide-y divide-border/50">
+                        {localAuthors
+                          .filter(a => a.name.toLowerCase().includes(authorSearch.toLowerCase()) || a.role.toLowerCase().includes(authorSearch.toLowerCase()))
+                          .map((author) => (
+                            <button
+                              key={author._id}
+                              type="button"
+                              onClick={() => {
+                                setFormData(prev => ({ ...prev, authorId: author._id }));
+                                setDropdownOpen(false);
+                                setAuthorSearch('');
+                              }}
+                              className={`w-full flex items-center justify-between px-3 py-2.5 text-xs text-left hover:bg-surface/50 cursor-pointer transition-colors ${formData.authorId === author._id ? 'bg-surface font-bold text-foreground border-l-[3px] border-primary' : 'text-muted'}`}
+                            >
+                              <div className="flex items-center space-x-2.5">
+                                {author.avatar ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={author.avatar} alt={author.name} className="h-5.5 w-5.5 rounded-full object-cover border border-border" />
+                                ) : (
+                                  <div className="h-5.5 w-5.5 bg-primary text-black rounded-full flex items-center justify-center font-bold font-serif text-[9px] select-none">
+                                    {author.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="font-bold text-foreground">{author.name}</p>
+                                  <p className="text-[10px] text-muted">{author.role}</p>
+                                </div>
+                              </div>
+                              {formData.authorId === author._id && <Check className="h-3.5 w-3.5 text-primary" />}
+                            </button>
+                          ))
+                        }
+
+                        {localAuthors.filter(a => a.name.toLowerCase().includes(authorSearch.toLowerCase()) || a.role.toLowerCase().includes(authorSearch.toLowerCase())).length === 0 && (
+                          <div className="px-3 py-4 text-xs text-center text-muted font-medium select-none">
+                            No contributors found.
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Modal Trigger Option */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAuthorModalOpen(true);
+                          setDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center justify-center gap-1.5 px-3 py-3 text-xs font-bold text-primary hover:bg-surface/50 border-t border-border cursor-pointer transition-colors"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>Create New Author...</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Selected Author Preview Card */}
+              {(() => {
+                const currentAuthor = localAuthors.find(a => a._id === formData.authorId);
+                if (!currentAuthor) return null;
+                return (
+                  <div className="mt-4 border border-border/80 bg-surface/10 rounded-lg p-4 flex flex-col sm:flex-row gap-4 items-start">
+                    {currentAuthor.avatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={currentAuthor.avatar} alt={currentAuthor.name} className="h-14 w-14 rounded-full object-cover border border-border shrink-0" />
+                    ) : (
+                      <div className="h-14 w-14 bg-primary text-black rounded-full flex items-center justify-center font-bold font-serif text-sm shrink-0 select-none">
+                        {currentAuthor.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex-grow space-y-1.5">
+                      <div>
+                        <h4 className="font-bold text-foreground text-sm">{currentAuthor.name}</h4>
+                        <p className="text-xs font-semibold text-muted tracking-wide uppercase">{currentAuthor.role}</p>
+                      </div>
+                      <p className="text-xs text-muted leading-relaxed font-medium line-clamp-2 max-w-xl">{currentAuthor.bio}</p>
+                      
+                      {(currentAuthor.linkedin || currentAuthor.twitter || currentAuthor.website) && (
+                        <div className="flex items-center space-x-3 pt-1 text-[10px] font-bold text-muted uppercase tracking-wider">
+                          {currentAuthor.linkedin && (
+                            <a href={currentAuthor.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors flex items-center gap-1">
+                              <LinkedInIcon className="h-3.5 w-3.5" /> LinkedIn
+                            </a>
+                          )}
+                          {currentAuthor.twitter && (
+                            <a href={currentAuthor.twitter} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors flex items-center gap-1">
+                              <TwitterIcon className="h-3.5 w-3.5" /> X (Twitter)
+                            </a>
+                          )}
+                          {currentAuthor.website && (
+                            <a href={currentAuthor.website} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors flex items-center gap-1">
+                              <Globe className="h-3 w-3" /> Website
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
@@ -674,6 +1008,199 @@ export default function BlogEditForm({ blog, categories }: BlogEditFormProps) {
 
         </div>
       </div>
+
+      {/* Create New Author Modal */}
+      {isAuthorModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-xl bg-background border border-border rounded-xl shadow-xl overflow-hidden font-sans my-8">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-border bg-surface/20">
+              <h3 className="text-base font-serif font-black text-foreground flex items-center gap-1.5 select-none">
+                <Sparkles className="h-4.5 w-4.5 text-primary fill-primary" />
+                Create New Author
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAuthorModalOpen(false);
+                  setAuthorError('');
+                  setAuthorSuccess('');
+                }}
+                className="p-1.5 border border-border hover:bg-surface rounded-lg text-muted hover:text-foreground transition-colors cursor-pointer"
+              >
+                <X className="h-4.5 w-4.5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              {authorError && (
+                <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-600 text-xs font-bold rounded-lg flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{authorError}</span>
+                </div>
+              )}
+
+              {authorSuccess && (
+                <div className="p-3 bg-green-500/10 border border-green-500/20 text-green-600 text-xs font-bold rounded-lg flex items-center gap-2">
+                  <Check className="h-4 w-4 shrink-0" />
+                  <span>{authorSuccess}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted block font-sans">Author Name</label>
+                  <input
+                    type="text"
+                    value={newAuthorName}
+                    onChange={(e) => setNewAuthorName(e.target.value)}
+                    placeholder="e.g. Saurabh Rathore"
+                    required
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-hidden focus:border-primary text-foreground font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted block font-sans">Author Role</label>
+                  <input
+                    type="text"
+                    value={newAuthorRole}
+                    onChange={(e) => setNewAuthorRole(e.target.value)}
+                    placeholder="e.g. Founder"
+                    required
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-hidden focus:border-primary text-foreground font-semibold"
+                  />
+                </div>
+              </div>
+
+              {/* Avatar Upload */}
+              <div className="space-y-2 border border-border/80 bg-surface/10 p-4 rounded-lg">
+                <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted block font-sans">Author Avatar Image</label>
+                
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  <div className="h-16 w-16 rounded-full overflow-hidden border border-border bg-surface shrink-0 flex items-center justify-center">
+                    {newAuthorAvatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={newAuthorAvatar} alt="Avatar preview" className="object-cover w-full h-full" />
+                    ) : (
+                      <span className="text-xs text-muted font-bold font-sans select-none">No Image</span>
+                    )}
+                  </div>
+
+                  <div className="flex-1 w-full space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="file"
+                        id="authorAvatarUploadInput"
+                        onChange={handleAuthorAvatarUpload}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                      
+                      <label
+                        htmlFor="authorAvatarUploadInput"
+                        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 border border-border rounded-lg text-xs font-bold text-foreground hover:bg-surface cursor-pointer transition-colors shadow-xs select-none"
+                      >
+                        <Upload className="h-3.5 w-3.5 stroke-[1.5]" />
+                        <span>{authorUploading ? `Uploading... ${authorUploadProgress !== null ? `${authorUploadProgress}%` : ''}` : newAuthorAvatar ? 'Replace Avatar' : 'Upload Avatar'}</span>
+                      </label>
+
+                      {newAuthorAvatar && (
+                        <button
+                          type="button"
+                          onClick={() => setNewAuthorAvatar('')}
+                          className="inline-flex items-center justify-center gap-1 px-3.5 py-2 border border-red-500/20 text-red-500 hover:bg-red-500/10 rounded-lg text-xs font-bold cursor-pointer transition-colors"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted font-sans">Upload a square image directly to Cloudinary. Maximum 5MB size limit.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Author Bio */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-wider text-muted font-sans">
+                  <label>Author Bio</label>
+                  <span>{newAuthorBio.length}/200</span>
+                </div>
+                <textarea
+                  value={newAuthorBio}
+                  onChange={(e) => setNewAuthorBio(e.target.value.slice(0, 200))}
+                  placeholder="Founder, product designer, and startup enthusiast writing about AI..."
+                  required
+                  rows={3}
+                  className="w-full bg-background border border-border rounded-lg p-3 text-sm focus:outline-hidden focus:border-primary text-foreground resize-none leading-relaxed"
+                />
+              </div>
+
+              {/* Social Links */}
+              <div className="space-y-3 pt-2 border-t border-border">
+                <h4 className="text-[10px] font-extrabold uppercase tracking-widest text-muted select-none font-sans">Social Profiles (Optional)</h4>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-muted uppercase font-sans">LinkedIn</label>
+                    <input
+                      type="url"
+                      value={newAuthorLinkedin}
+                      onChange={(e) => setNewAuthorLinkedin(e.target.value)}
+                      placeholder="https://linkedin.com/..."
+                      className="w-full bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs focus:outline-hidden focus:border-primary text-foreground font-sans"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-muted uppercase font-sans">X (Twitter)</label>
+                    <input
+                      type="url"
+                      value={newAuthorTwitter}
+                      onChange={(e) => setNewAuthorTwitter(e.target.value)}
+                      placeholder="https://x.com/..."
+                      className="w-full bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs focus:outline-hidden focus:border-primary text-foreground font-sans"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-muted uppercase font-sans">Website</label>
+                    <input
+                      type="url"
+                      value={newAuthorWebsite}
+                      onChange={(e) => setNewAuthorWebsite(e.target.value)}
+                      placeholder="https://example.com"
+                      className="w-full bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs focus:outline-hidden focus:border-primary text-foreground font-sans"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-border font-sans">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAuthorModalOpen(false);
+                    setAuthorError('');
+                    setAuthorSuccess('');
+                  }}
+                  className="px-4 py-2 border border-border rounded-lg text-xs font-bold text-muted hover:text-foreground hover:bg-surface transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateAuthorSubmit}
+                  disabled={authorUploading}
+                  className="inline-flex items-center justify-center px-4 py-2.5 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary-hover transition-colors rounded-lg cursor-pointer disabled:opacity-40"
+                >
+                  Create Author
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

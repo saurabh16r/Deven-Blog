@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
-import { Blog } from '@/lib/models';
+import { Blog, Author } from '@/lib/models';
 import { generateSummary } from '@/lib/gemini';
 
 export async function GET() {
   try {
     await connectDB();
-    const blogs = await Blog.find().sort({ createdAt: -1 });
+    const blogs = await Blog.find().sort({ createdAt: -1 }).populate('authorId');
     return NextResponse.json(blogs);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

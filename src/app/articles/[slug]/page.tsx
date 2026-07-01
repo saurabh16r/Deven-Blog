@@ -1,7 +1,7 @@
 import React from 'react';
 import { notFound, redirect } from 'next/navigation';
 import connectDB from '@/lib/db';
-import { Blog, User, Bookmark } from '@/lib/models';
+import { Blog, User, Bookmark, Author } from '@/lib/models';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import ReadingProgressBar from '@/components/blog/ReadingProgressBar';
@@ -47,6 +47,7 @@ export default async function ArticleDetailPage({ params, searchParams }: PagePr
   let isLocked = false;
   let showPaywall = false;
   let paywallReason = 'visitor'; // 'visitor' or 'premium'
+  let isPremiumUser = false;
 
   await connectDB();
   
@@ -55,7 +56,7 @@ export default async function ArticleDetailPage({ params, searchParams }: PagePr
     { slug, published: true },
     { $inc: { views: 1 } },
     { returnDocument: 'after' }
-  ).lean();
+  ).populate('authorId').lean();
 
   if (dbBlog) {
     blog = JSON.parse(JSON.stringify(dbBlog));
@@ -87,6 +88,9 @@ export default async function ArticleDetailPage({ params, searchParams }: PagePr
     if (session?.user) {
       const dbUser = await User.findOne({ email: session.user.email }).lean();
       if (dbUser) {
+        if (dbUser.plan === 'premium') {
+          isPremiumUser = true;
+        }
         const existingBookmark = await Bookmark.findOne({ 
           userId: dbUser._id, 
           articleId: dbBlog._id 
@@ -132,6 +136,12 @@ export default async function ArticleDetailPage({ params, searchParams }: PagePr
     notFound();
   }
 
+  // Strip premium content for non-premium users before sending to client props
+  if (!isPremiumUser) {
+    blog.aiSummary = '';
+    blog.audioUrl = '';
+  }
+
   // Inject IDs into the heading tags client side scrollspy
   const contentWithIds = injectHeadingIds(blog.content);
 
@@ -172,29 +182,60 @@ export default async function ArticleDetailPage({ params, searchParams }: PagePr
           </div>
 
           {/* Author Block Row */}
-          <div className="flex items-center justify-between border-y border-border py-4 my-6">
-            <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 bg-primary text-black rounded-full flex items-center justify-center font-bold font-serif text-sm shrink-0 select-none">
-                JD
+          <div className="border-y border-border py-5 my-6 space-y-3 font-sans">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                {blog.authorId?.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={blog.authorId.avatar}
+                    alt={blog.authorId.name}
+                    className="h-11 w-11 rounded-full object-cover border border-border shrink-0"
+                  />
+                ) : (
+                  <div className="h-11 w-11 bg-primary text-black rounded-full flex items-center justify-center font-bold font-serif text-sm shrink-0 select-none">
+                    {blog.authorId?.name ? blog.authorId.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'A'}
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-bold text-foreground">{blog.authorId?.name || 'Anonymous'}</p>
+                  <p className="text-[10px] font-bold text-muted uppercase tracking-wider">
+                    {blog.authorId?.role || 'Author'} • {formatDate(blog.createdAt)}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-bold text-foreground">Jane Doe</p>
-                <p className="text-[11px] font-semibold text-muted uppercase tracking-wider">
-                  EDITOR-IN-CHIEF • {formatDate(blog.createdAt)}
-                </p>
+
+              {/* Top Share & Bookmark minimal buttons */}
+              <div className="flex items-center space-x-2">
+                <BookmarkButton articleId={blog._id} initialBookmarked={isBookmarked} />
               </div>
             </div>
 
-            {/* Top Share & Bookmark minimal buttons */}
-            <div className="flex items-center space-x-2">
-              <button 
-                className="p-2 border border-border hover:bg-surface rounded-full transition-colors cursor-pointer text-muted hover:text-foreground"
-                title="Share briefing"
-              >
-                <Share2 className="h-4 w-4 stroke-[1.5]" />
-              </button>
-              <BookmarkButton articleId={blog._id} initialBookmarked={isBookmarked} />
-            </div>
+            {blog.authorId?.bio && (
+              <p className="text-xs text-muted leading-relaxed max-w-xl font-medium">
+                {blog.authorId.bio}
+              </p>
+            )}
+
+            {(blog.authorId?.linkedin || blog.authorId?.twitter || blog.authorId?.website) && (
+              <div className="flex items-center space-x-3 pt-1 text-[10px] font-bold uppercase tracking-wider text-muted">
+                {blog.authorId.linkedin && (
+                  <a href={blog.authorId.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                    LinkedIn
+                  </a>
+                )}
+                {blog.authorId.twitter && (
+                  <a href={blog.authorId.twitter} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                    X (Twitter)
+                  </a>
+                )}
+                {blog.authorId.website && (
+                  <a href={blog.authorId.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                    Website
+                  </a>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Cover Image Block */}
@@ -217,6 +258,8 @@ export default async function ArticleDetailPage({ params, searchParams }: PagePr
           <AISummary
             summaryText={blog.aiSummary}
             enabled={blog.aiSummaryEnabled}
+            isPremium={isPremiumUser}
+            slug={slug}
           />
 
           {/* Article Content with Dynamic Client Paywall & Audio narration */}
@@ -226,6 +269,8 @@ export default async function ArticleDetailPage({ params, searchParams }: PagePr
             freeContent={freeContent}
             blurredContent={blurredContent}
             audioUrl={blog.audioUrl}
+            audioEnabled={blog.audioEnabled}
+            isPremium={isPremiumUser}
           />
 
           <HistoryTracker articleId={blog._id} slug={blog.slug} />

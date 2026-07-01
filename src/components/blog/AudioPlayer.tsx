@@ -1,14 +1,19 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Lock } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 
 interface AudioPlayerProps {
   audioUrl: string;
   isPreviewOnly?: boolean;
+  isPremium?: boolean;
+  slug?: string;
 }
 
-export default function AudioPlayer({ audioUrl, isPreviewOnly = false }: AudioPlayerProps) {
+export default function AudioPlayer({ audioUrl, isPreviewOnly = false, isPremium: initialPremium, slug }: AudioPlayerProps) {
+  const { data: session, status } = useSession();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -17,11 +22,29 @@ export default function AudioPlayer({ audioUrl, isPreviewOnly = false }: AudioPl
   const [playbackRate, setPlaybackRate] = useState(1);
   const [audioLocked, setAudioLocked] = useState(false);
 
+  const [fetchedUrl, setFetchedUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Sync isPremium dynamically
+  const isPremium = initialPremium || (status === 'authenticated' && session?.user?.plan === 'premium');
+
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.playbackRate = playbackRate;
+    if (isPremium && !audioUrl && !fetchedUrl && !loading && slug) {
+      setLoading(true);
+      fetch(`/api/audio?slug=${slug}`)
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to fetch audio url');
+          return res.json();
+        })
+        .then((data) => {
+          if (data.audioUrl) {
+            setFetchedUrl(data.audioUrl);
+          }
+        })
+        .catch((err) => console.error('Error fetching audio:', err))
+        .finally(() => setLoading(false));
     }
-  }, [playbackRate]);
+  }, [isPremium, audioUrl, fetchedUrl, loading, slug]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -96,13 +119,71 @@ export default function AudioPlayer({ audioUrl, isPreviewOnly = false }: AudioPl
 
   const speedOptions = [1, 1.25, 1.5, 2];
 
-  if (!audioUrl) return null;
+  // Render Premium Upgrade Card for Free Users
+  if (!isPremium) {
+    return (
+      <div className="mb-8 w-full border border-primary/20 dark:border-[#2C2C2F] rounded-lg bg-[#1F1A17] dark:bg-[#181818] p-6 space-y-4 font-sans text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center space-x-2.5">
+            <span className="text-base select-none">🎧</span>
+            <span className="font-serif font-black text-sm sm:text-base tracking-wide text-white">
+              Audio Article
+            </span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#FFC247] text-black">
+              👑 Premium
+            </span>
+          </div>
+          <div className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-neutral-800 border border-neutral-700 text-neutral-400 shrink-0 select-none">
+            <Lock className="h-3.5 w-3.5" />
+          </div>
+        </div>
+
+        <p className="text-xs text-neutral-300 leading-relaxed font-medium">
+          Listen to professionally narrated articles anywhere.
+        </p>
+
+        <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {status === 'authenticated' ? (
+            <Link
+              href="/pricing"
+              className="inline-flex items-center justify-center px-4 py-2 bg-[#FFC247] text-black hover:bg-[#FFC247]/90 font-bold text-xs rounded-lg transition-colors cursor-pointer select-none"
+            >
+              Upgrade to Premium
+            </Link>
+          ) : (
+            <Link
+              href="/login?callbackUrl=/pricing"
+              className="inline-flex items-center justify-center px-4 py-2 bg-[#FFC247] text-black hover:bg-[#FFC247]/90 font-bold text-xs rounded-lg transition-colors cursor-pointer select-none"
+            >
+              Sign In & Upgrade
+            </Link>
+          )}
+          <span className="text-[10px] font-semibold text-neutral-400 select-none">
+            ₹299/month. Cancel anytime.
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  const activeAudioUrl = audioUrl || fetchedUrl;
+
+  if (loading) {
+    return (
+      <div className="mb-8 w-full border border-border dark:border-[#2C2C2F] rounded-lg bg-[#1F1A17] dark:bg-[#181818] p-5 flex items-center justify-center space-x-2 text-neutral-300 text-xs font-semibold font-sans select-none">
+        <div className="h-4 w-4 border-2 border-[#FFC247] border-t-transparent rounded-full animate-spin" />
+        <span>Loading audio narration...</span>
+      </div>
+    );
+  }
+
+  if (!activeAudioUrl) return null;
 
   return (
-    <div className="bg-[#1F1A17] dark:bg-[#181818] border border-[#2C2622] dark:border-[#2C2C2F] rounded-lg p-3.5 mb-8 text-white">
+    <div className="bg-[#1F1A17] dark:bg-[#181818] border border-[#2C2622] dark:border-[#2C2C2F] rounded-lg p-3.5 mb-8 text-white font-sans">
       <audio
         ref={audioRef}
-        src={audioUrl}
+        src={activeAudioUrl}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={() => setIsPlaying(false)}
@@ -122,8 +203,11 @@ export default function AudioPlayer({ audioUrl, isPreviewOnly = false }: AudioPl
               <Play className="h-4 w-4 fill-current translate-x-0.5" />
             )}
           </button>
-          <span className="text-xs uppercase font-extrabold tracking-wider select-none font-sans text-neutral-200 dark:text-[#FAFAF9]">
-            {isPlaying ? 'Playing briefing' : 'Listen to briefing'}
+          <span className="text-xs uppercase font-extrabold tracking-wider select-none font-sans text-neutral-200 dark:text-[#FAFAF9] flex items-center gap-1.5">
+            <span>{isPlaying ? 'Playing briefing' : 'Listen to briefing'}</span>
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-extrabold bg-[#FFC247]/10 text-[#FFC247] border border-[#FFC247]/30 select-none uppercase tracking-widest">
+              👑 Premium
+            </span>
           </span>
         </div>
 

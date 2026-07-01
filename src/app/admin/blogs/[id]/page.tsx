@@ -1,7 +1,7 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import connectDB from '@/lib/db';
-import { Blog, Category } from '@/lib/models';
+import { Blog, Category, Author } from '@/lib/models';
 import BlogEditForm from '@/components/editor/BlogEditForm';
 
 export const revalidate = 0;
@@ -23,5 +23,8 @@ export default async function AdminEditBlogPage({ params }: PageProps) {
   const dbCats = await Category.find().sort({ name: 1 }).lean();
   const categories = JSON.parse(JSON.stringify(dbCats));
 
-  return <BlogEditForm blog={blog} categories={categories} />;
+  const dbAuthors = await Author.find().sort({ name: 1 }).lean();
+  const authors = JSON.parse(JSON.stringify(dbAuthors));
+
+  return <BlogEditForm blog={blog} categories={categories} authors={authors} />;
 }

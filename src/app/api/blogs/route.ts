@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
-import { Blog } from '@/lib/models';
+import { Blog, Author } from '@/lib/models';
 import { generateSummary } from '@/lib/gemini';
 
 export async function GET(req: NextRequest) {
@@ -40,7 +40,8 @@ export async function GET(req: NextRequest) {
     const blogs = await Blog.find(query)
       .sort(sortQuery)
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .populate('authorId');
 
     return NextResponse.json({ blogs, total, page, totalPages: Math.ceil(total / limit) });
   } catch (error: any) {

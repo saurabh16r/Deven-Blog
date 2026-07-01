@@ -1,6 +1,6 @@
 import React from 'react';
 import connectDB from '@/lib/db';
-import { Category } from '@/lib/models';
+import { Category, Author } from '@/lib/models';
 import BlogEditForm from '@/components/editor/BlogEditForm';
 
 export const revalidate = 0;
@@ -10,5 +10,8 @@ export default async function AdminNewBlogPage() {
   const dbCats = await Category.find().sort({ name: 1 }).lean();
   const categories = JSON.parse(JSON.stringify(dbCats));
 
-  return <BlogEditForm categories={categories} />;
+  const dbAuthors = await Author.find().sort({ name: 1 }).lean();
+  const authors = JSON.parse(JSON.stringify(dbAuthors));
+
+  return <BlogEditForm categories={categories} authors={authors} />;
 }

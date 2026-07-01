@@ -8,6 +8,8 @@ const BlogSchema = new Schema({
   coverImage: { type: String, required: true },
   category: { type: String, required: true },
   tags: [{ type: String }],
+  authorId: { type: Schema.Types.ObjectId, ref: 'Author', required: true },
+
   
   featured: { type: Boolean, default: false },
   published: { type: Boolean, default: false },

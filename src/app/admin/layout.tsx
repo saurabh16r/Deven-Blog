@@ -14,7 +14,8 @@ import {
   X,
   Globe,
   Sun,
-  Moon
+  Moon,
+  PenTool
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -26,6 +27,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Blog Management', href: '/admin/blogs', icon: FileText },
     { name: 'Categories', href: '/admin/categories', icon: FolderKanban },
+    { name: 'Authors', href: '/admin/authors', icon: PenTool },
     { name: 'Subscribers', href: '/admin/subscribers', icon: Users },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
   ];

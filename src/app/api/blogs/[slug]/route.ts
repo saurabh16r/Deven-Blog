@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
-import { Blog } from '@/lib/models';
+import { Blog, Author } from '@/lib/models';
 
 export async function GET(
   req: NextRequest,
@@ -14,7 +14,7 @@ export async function GET(
       { slug, published: true },
       { $inc: { views: 1 } },
       { returnDocument: 'after' }
-    );
+    ).populate('authorId');
     
     if (!blog) {
       return NextResponse.json({ error: 'Article not found' }, { status: 404 });

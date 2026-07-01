@@ -12,6 +12,8 @@ interface ArticleContentClientProps {
   freeContent: string;
   blurredContent: string;
   audioUrl: string;
+  audioEnabled: boolean;
+  isPremium: boolean;
 }
 
 export default function ArticleContentClient({
@@ -20,6 +22,8 @@ export default function ArticleContentClient({
   freeContent,
   blurredContent,
   audioUrl,
+  audioEnabled,
+  isPremium,
 }: ArticleContentClientProps) {
   const { data: session, status } = useSession();
   const [isLocked, setIsLocked] = useState(initialLocked);
@@ -61,7 +65,9 @@ export default function ArticleContentClient({
   return (
     <div className="relative font-sans">
       {/* Audio player */}
-      <AudioPlayer audioUrl={audioUrl} isPreviewOnly={isLocked} />
+      {audioEnabled && (
+        <AudioPlayer audioUrl={audioUrl} isPreviewOnly={isLocked} isPremium={isPremium} slug={slug} />
+      )}
 
       {/* Article text body */}
       <div

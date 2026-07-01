@@ -7,6 +7,7 @@ import ReadingHistory from './ReadingHistory';
 import Bookmark from './Bookmark';
 import Subscription from './Subscription';
 import PasswordResetOTP from './PasswordResetOTP';
+import Author from './Author';
 
 export {
   Blog,
@@ -17,5 +18,7 @@ export {
   ReadingHistory,
   Bookmark,
   Subscription,
-  PasswordResetOTP
+  PasswordResetOTP,
+  Author
 };
+
