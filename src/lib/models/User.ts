@@ -34,7 +34,7 @@ const UserSchema = new Schema(
     },
     plan: {
       type: String,
-      enum: ['free', 'premium'],
+      enum: ['free', 'premium', 'pro'],
       default: 'free',
     },
     subscriptionStatus: {
@@ -46,6 +46,16 @@ const UserSchema = new Schema(
       type: Number,
       default: 0,
     },
+    freeArticlesRead: {
+      type: Number,
+      default: 0,
+    },
+    readArticles: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Blog',
+      },
+    ],
     bookmarks: [
       {
         type: Schema.Types.ObjectId,

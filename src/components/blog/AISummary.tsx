@@ -20,7 +20,7 @@ export default function AISummary({ summaryText, enabled, isPremium: initialPrem
   const [loading, setLoading] = useState(false);
 
   // Sync isPremium dynamically
-  const isPremium = initialPremium || (status === 'authenticated' && session?.user?.plan === 'premium');
+  const isPremium = initialPremium || (status === 'authenticated' && (session?.user?.plan === 'premium' || session?.user?.plan === 'pro'));
 
   useEffect(() => {
     if (isPremium && !summaryText && !fetchedSummary && !loading && slug) {
@@ -42,52 +42,8 @@ export default function AISummary({ summaryText, enabled, isPremium: initialPrem
 
   if (!enabled) return null;
 
-  // Render Premium Upgrade Card for Free Users
-  if (!isPremium) {
-    return (
-      <div className="mb-8 w-full border border-primary/20 dark:border-[#2C2C2F] rounded-lg bg-surface/30 dark:bg-[#171717]/60 overflow-hidden font-sans p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center space-x-2.5">
-            <Sparkles className="h-4.5 w-4.5 text-[#FFC247] fill-[#FFC247]" />
-            <span className="font-serif font-black text-sm sm:text-base tracking-wide text-foreground">
-              AI Executive Briefing
-            </span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#FFC247] text-black">
-              👑 Premium
-            </span>
-          </div>
-          <div className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-surface border border-border text-muted shrink-0 select-none">
-            <Lock className="h-3.5 w-3.5" />
-          </div>
-        </div>
-
-        <p className="text-xs text-muted leading-relaxed font-medium">
-          Unlock AI-powered executive summaries that help you understand every article in under one minute.
-        </p>
-
-        <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          {status === 'authenticated' ? (
-            <Link
-              href="/pricing"
-              className="inline-flex items-center justify-center px-4 py-2 bg-[#FFC247] text-black hover:bg-[#FFC247]/90 font-bold text-xs rounded-lg transition-colors cursor-pointer select-none"
-            >
-              Upgrade to Premium
-            </Link>
-          ) : (
-            <Link
-              href="/login?callbackUrl=/pricing"
-              className="inline-flex items-center justify-center px-4 py-2 bg-[#FFC247] text-black hover:bg-[#FFC247]/90 font-bold text-xs rounded-lg transition-colors cursor-pointer select-none"
-            >
-              Sign In & Upgrade
-            </Link>
-          )}
-          <span className="text-[10px] font-semibold text-muted select-none">
-            Included with FounderBrief Premium.
-          </span>
-        </div>
-      </div>
-    );
-  }
+  // If not premium, return null (PremiumReadingTools card handles visual locked state instead)
+  if (!isPremium) return null;
 
   const activeSummary = summaryText || fetchedSummary;
 

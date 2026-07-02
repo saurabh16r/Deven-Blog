@@ -26,6 +26,9 @@ const BlogSchema = new Schema({
   
   aiSummary: { type: String, default: '' },
   audioUrl: { type: String, default: '' },
+  audioDuration: { type: Number, default: 0 },
+  audioFileName: { type: String, default: '' },
+  audioUploadedAt: { type: Date },
   
   seoTitle: { type: String, default: '' },
   seoDescription: { type: String, default: '' },

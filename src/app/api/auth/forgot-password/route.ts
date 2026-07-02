@@ -7,31 +7,35 @@ import { sendEmail } from '@/lib/resend';
 
 export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json();
+    let { email } = await req.json();
 
-    if (!email || !email.includes('@')) {
+    if (!email) {
       return NextResponse.json(
-        { error: 'Please enter a valid email address.' },
+        { success: false, error: 'Please enter your email address.' },
+        { status: 400 }
+      );
+    }
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !trimmedEmail.includes('@') || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      return NextResponse.json(
+        { success: false, error: 'Please enter a valid email address.' },
         { status: 400 }
       );
     }
 
     await connectDB();
 
-    const normalizedEmail = email.toLowerCase();
+    const normalizedEmail = trimmedEmail.toLowerCase();
 
     // Check if the user exists
     const user = await User.findOne({ email: normalizedEmail });
 
-    // Success response message to prevent email enumeration
-    const successResponse = {
-      success: true,
-      message: "If an account exists, we've sent a verification code.",
-    };
-
     if (!user) {
-      // Return generic success even if user doesn't exist
-      return NextResponse.json(successResponse);
+      return NextResponse.json(
+        { success: false, error: 'No account was found with this email address. Please check your email or create a new account.', code: 'EMAIL_NOT_FOUND' },
+        { status: 404 }
+      );
     }
 
     // Rate limit check: Maximum 3 requests every 15 minutes
@@ -43,7 +47,7 @@ export async function POST(req: NextRequest) {
 
     if (requestsCount >= 3) {
       return NextResponse.json(
-        { error: 'Too many verification code requests. Please wait a few minutes before trying again.' },
+        { success: false, error: 'Too many verification code requests. Please wait a few minutes before trying again.' },
         { status: 429 }
       );
     }
@@ -67,6 +71,10 @@ export async function POST(req: NextRequest) {
       expiresAt: new Date(Date.now() + 15 * 60 * 1000),
       createdAt: new Date(),
     });
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Generated OTP: ${otp}`);
+    }
 
     // Send the email
     const emailHtml = `
@@ -150,12 +158,7 @@ export async function POST(req: NextRequest) {
       </html>
     `;
 
-    // Log the OTP in the server terminal for easy development testing
-    console.log(`\n===================================`);
-    console.log(`[PASSWORD RESET OTP]`);
-    console.log(`Email: ${normalizedEmail}`);
-    console.log(`Code:  ${otp}`);
-    console.log(`===================================\n`);
+
 
     const emailRes = await sendEmail({
       to: normalizedEmail,
@@ -178,11 +181,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json(successResponse);
+    return NextResponse.json({
+      success: true,
+      message: "✅ OTP sent successfully. We've sent a verification code to your email address."
+    });
   } catch (error: any) {
     console.error('Forgot password API error:', error);
     return NextResponse.json(
-      { error: 'An internal error occurred. Please try again.' },
+      { error: 'Something went wrong. Please try again in a few moments.' },
       { status: 500 }
     );
   }

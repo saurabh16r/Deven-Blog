@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
     await connectDB();
     const user = await User.findOne({ email: session.user.email }).lean();
-    if (!user || user.plan !== 'premium') {
+    if (!user || (user.plan !== 'premium' && user.plan !== 'pro')) {
       return NextResponse.json({ error: 'Premium subscription required.' }, { status: 403 });
     }
 

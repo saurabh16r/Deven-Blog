@@ -10,6 +10,7 @@ import AISummary from '@/components/blog/AISummary';
 import BookmarkButton from '@/components/blog/BookmarkButton';
 import HistoryTracker from '@/components/blog/HistoryTracker';
 import ArticleContentClient from '@/components/blog/ArticleContentClient';
+import PremiumReadingTools from '@/components/blog/PremiumReadingTools';
 import { formatDate, slugify, injectHeadingIds } from '@/lib/utils';
 import { Share2 } from 'lucide-react';
 import Link from 'next/link';
@@ -48,6 +49,7 @@ export default async function ArticleDetailPage({ params, searchParams }: PagePr
   let showPaywall = false;
   let paywallReason = 'visitor'; // 'visitor' or 'premium'
   let isPremiumUser = false;
+  let readingAllowanceText = '';
 
   await connectDB();
   
@@ -86,11 +88,13 @@ export default async function ArticleDetailPage({ params, searchParams }: PagePr
 
     // Check user authenticated paywall and bookmarks
     if (session?.user) {
-      const dbUser = await User.findOne({ email: session.user.email }).lean();
+      // Find user without lean() so we can save and update history
+      const dbUser = await User.findOne({ email: session.user.email });
       if (dbUser) {
-        if (dbUser.plan === 'premium') {
+        if (dbUser.plan === 'premium' || dbUser.plan === 'pro') {
           isPremiumUser = true;
         }
+        
         const existingBookmark = await Bookmark.findOne({ 
           userId: dbUser._id, 
           articleId: dbBlog._id 
@@ -98,15 +102,65 @@ export default async function ArticleDetailPage({ params, searchParams }: PagePr
         isBookmarked = !!existingBookmark;
         
         // Show premium paywall if user is not premium
-        if (dbUser.plan !== 'premium') {
+        if (dbUser.plan !== 'premium' && dbUser.plan !== 'pro') {
           // If they just logged in from the paywall card, redirect them to pricing page
           if (search.login === '1') {
             redirect('/pricing');
           }
           
-          isLocked = true;
-          showPaywall = true;
-          paywallReason = 'premium';
+          // Visitor history migration: check if there's a visitor cookie to import
+          const cookieStore = await cookies();
+          const rawReadSlugs = cookieStore.get('fb_read_slugs')?.value;
+          if (rawReadSlugs) {
+            try {
+              const readSlugs = JSON.parse(decodeURIComponent(rawReadSlugs));
+              if (Array.isArray(readSlugs) && readSlugs.length > 0) {
+                // Find these visitor read blogs in DB
+                const visitorBlogs = await Blog.find({ slug: { $in: readSlugs } }).select('_id');
+                const visitorIds = visitorBlogs.map(b => b._id.toString());
+                
+                const currentReadIds = dbUser.readArticles ? dbUser.readArticles.map((id: any) => id.toString()) : [];
+                const newIds = visitorIds.filter(id => !currentReadIds.includes(id));
+                
+                if (newIds.length > 0) {
+                  if (!dbUser.readArticles) dbUser.readArticles = [];
+                  newIds.forEach(id => dbUser.readArticles.push(id));
+                  dbUser.freeArticlesRead = dbUser.readArticles.length;
+                  await dbUser.save();
+                }
+              }
+            } catch (err) {
+              console.error('Error migrating read slugs:', err);
+            }
+            cookieStore.delete('fb_read_slugs');
+          }
+
+          // Check if current article is already read
+          const currentReadIds = dbUser.readArticles ? dbUser.readArticles.map((id: any) => id.toString()) : [];
+          const hasReadCurrent = currentReadIds.includes(dbBlog._id.toString());
+
+          if (hasReadCurrent) {
+            isLocked = false;
+          } else {
+            if (dbUser.freeArticlesRead < 5) {
+              // Increment count and add to list
+              if (!dbUser.readArticles) dbUser.readArticles = [];
+              dbUser.readArticles.push(dbBlog._id);
+              dbUser.freeArticlesRead = dbUser.readArticles.length;
+              await dbUser.save();
+              isLocked = false;
+            } else {
+              isLocked = true;
+              showPaywall = true;
+              paywallReason = 'premium';
+            }
+          }
+
+          if (isLocked) {
+            readingAllowanceText = 'Free Reading Limit Reached';
+          } else {
+            readingAllowanceText = `${dbUser.freeArticlesRead} of 5 free articles used`;
+          }
         }
       }
     } else {
@@ -123,11 +177,24 @@ export default async function ArticleDetailPage({ params, searchParams }: PagePr
         readSlugs = [];
       }
       
-      // Lock if 3rd unique article
-      if (!readSlugs.includes(slug) && readSlugs.length >= 2) {
-        isLocked = true;
-        showPaywall = true;
-        paywallReason = 'visitor';
+      const hasReadCurrent = readSlugs.includes(slug);
+      if (hasReadCurrent) {
+        isLocked = false;
+      } else {
+        if (readSlugs.length < 5) {
+          isLocked = false;
+        } else {
+          isLocked = true;
+          showPaywall = true;
+          paywallReason = 'visitor';
+        }
+      }
+
+      if (isLocked) {
+        readingAllowanceText = 'Free Reading Limit Reached';
+      } else {
+        const currentCount = hasReadCurrent ? readSlugs.length : Math.min(5, readSlugs.length + 1);
+        readingAllowanceText = `${currentCount} of 5 free articles used`;
       }
     }
   }
@@ -170,10 +237,16 @@ export default async function ArticleDetailPage({ params, searchParams }: PagePr
           
           {/* Header Metadata Section */}
           <div className="space-y-4">
-            <div className="text-xs uppercase font-extrabold tracking-widest text-primary flex items-center gap-1.5">
+            <div className="text-xs uppercase font-extrabold tracking-widest text-primary flex items-center gap-1.5 flex-wrap">
               <span>{blog.category}</span>
               <span>•</span>
               <span>{blog.readingTime} min read</span>
+              {readingAllowanceText && (
+                <>
+                  <span>•</span>
+                  <span className="text-[#FFC247]">{readingAllowanceText}</span>
+                </>
+              )}
             </div>
 
             <h1 className="text-3xl sm:text-5xl font-serif font-black tracking-tight leading-[1.15] text-foreground">
@@ -253,6 +326,11 @@ export default async function ArticleDetailPage({ params, searchParams }: PagePr
               Cover illustration for {blog.title}. Photo by Deven Editorial.
             </p>
           </div>
+
+          {/* Premium Reading Tools Card for Free/Visitor users */}
+          {!isPremiumUser && (blog.aiSummaryEnabled || blog.audioEnabled) && (
+            <PremiumReadingTools />
+          )}
 
           {/* Collapsible AI Summary Widget */}
           <AISummary

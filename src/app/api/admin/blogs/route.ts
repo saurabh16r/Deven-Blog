@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import { Blog, Author } from '@/lib/models';
 import { generateSummary } from '@/lib/gemini';
+import { deleteAudio, getPublicIdFromUrl } from '@/lib/cloudinary';
 
 export async function GET() {
   try {
@@ -37,6 +38,20 @@ export async function PUT(req: NextRequest) {
       } else if (action === 'unpublish') {
         await Blog.updateMany({ _id: { $in: ids } }, { published: false });
       } else if (action === 'delete') {
+        // Also delete audio for bulk deleted blogs
+        const blogsToDelete = await Blog.find({ _id: { $in: ids } });
+        for (const blogToDel of blogsToDelete) {
+          if (blogToDel.audioUrl) {
+            const publicId = getPublicIdFromUrl(blogToDel.audioUrl);
+            if (publicId) {
+              try {
+                await deleteAudio(publicId);
+              } catch (cloudinaryErr) {
+                console.error(`Failed to delete audio from Cloudinary for blog ${blogToDel._id}:`, cloudinaryErr);
+              }
+            }
+          }
+        }
         await Blog.deleteMany({ _id: { $in: ids } });
       }
       return NextResponse.json({ success: true });
@@ -84,6 +99,18 @@ export async function DELETE(req: NextRequest) {
     }
 
     await connectDB();
+    const existingBlog = await Blog.findById(id);
+    if (existingBlog && existingBlog.audioUrl) {
+      const publicId = getPublicIdFromUrl(existingBlog.audioUrl);
+      if (publicId) {
+        try {
+          await deleteAudio(publicId);
+        } catch (cloudinaryErr) {
+          console.error(`Failed to delete audio from Cloudinary during blog deletion:`, cloudinaryErr);
+        }
+      }
+    }
+    
     const deleted = await Blog.findByIdAndDelete(id);
     if (!deleted) {
       return NextResponse.json({ error: 'Blog not found' }, { status: 404 });

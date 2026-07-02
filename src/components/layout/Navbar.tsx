@@ -167,7 +167,7 @@ export default function Navbar() {
                   <button
                     onClick={() => setDropdownOpen(!dropdownOpen)}
                     className={`flex items-center justify-center h-9 w-9 rounded-full overflow-hidden focus:outline-none cursor-pointer border ${
-                      session.user.plan === 'premium' 
+                      (session.user.plan === 'premium' || session.user.plan === 'pro') 
                         ? 'border-primary bg-primary/20 ring-2 ring-primary/20' 
                         : 'border-border bg-primary/20 text-foreground'
                     }`}
@@ -186,7 +186,7 @@ export default function Navbar() {
                     <div className="absolute right-0 mt-2 w-48 bg-background border border-border rounded-lg shadow-md py-1.5 z-50 text-sm animate-in fade-in slide-in-from-top-2 duration-150">
                       <div className="px-4 py-2 border-b border-border font-semibold text-xs text-muted uppercase tracking-wider select-none truncate flex items-center justify-between gap-1.5">
                         <span className="truncate">{session.user.name || 'User'}</span>
-                        {session.user.plan === 'premium' && (
+                        {(session.user.plan === 'premium' || session.user.plan === 'pro') && (
                           <span className="bg-primary/20 text-[#D8A21A] dark:text-primary border border-primary/30 px-1 rounded text-[8px] font-black uppercase shrink-0">
                             Premium
                           </span>
@@ -332,7 +332,7 @@ export default function Navbar() {
               <div className="border-t border-border pt-4 mt-4 space-y-2">
                 <div className="px-3 text-xs uppercase font-extrabold tracking-widest text-muted select-none flex items-center gap-2">
                   <span>Account ({session.user.name})</span>
-                  {session.user.plan === 'premium' && (
+                  {(session.user.plan === 'premium' || session.user.plan === 'pro') && (
                     <span className="bg-primary/20 text-[#D8A21A] dark:text-primary border border-primary/30 px-1 py-0.5 rounded text-[8px] font-black uppercase inline-block">
                       Premium
                     </span>

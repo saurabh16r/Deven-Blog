@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateSpeech } from '@/lib/openai';
+import { deleteAudio } from '@/lib/cloudinary';
 import connectDB from '@/lib/db';
 import { Blog } from '@/lib/models';
 
@@ -25,6 +26,23 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ audioUrl });
   } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const publicId = searchParams.get('publicId');
+
+    if (!publicId) {
+      return NextResponse.json({ error: 'Public ID is required' }, { status: 400 });
+    }
+
+    await deleteAudio(publicId);
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Audio delete handler error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

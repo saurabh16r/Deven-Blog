@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import TiptapEditor from './TiptapEditor';
 import { slugify, calculateReadingTime } from '@/lib/utils';
-import { Save, Sparkles, Headphones, Upload, ArrowLeft, Check, AlertCircle, X, Globe, ChevronDown, Search, User, Plus } from 'lucide-react';
+import { Save, Sparkles, Headphones, Upload, ArrowLeft, Check, AlertCircle, X, Globe, ChevronDown, Search, User, Plus, Play, Pause } from 'lucide-react';
 import Link from 'next/link';
 
 const LinkedInIcon = ({ className = "h-3.5 w-3.5" }: { className?: string }) => (
@@ -56,6 +56,9 @@ interface BlogType {
   
   aiSummary: string;
   audioUrl: string;
+  audioDuration?: number;
+  audioFileName?: string;
+  audioUploadedAt?: string | Date | null;
   
   seoTitle: string;
   seoDescription: string;
@@ -98,6 +101,9 @@ export default function BlogEditForm({ blog, categories, authors }: BlogEditForm
     audioEnabled: blog?.audioEnabled !== undefined ? blog?.audioEnabled : false,
     aiSummary: blog?.aiSummary || '',
     audioUrl: blog?.audioUrl || '',
+    audioDuration: blog?.audioDuration || 0,
+    audioFileName: blog?.audioFileName || '',
+    audioUploadedAt: blog?.audioUploadedAt || null,
     seoTitle: blog?.seoTitle || '',
     seoDescription: blog?.seoDescription || '',
     ogImage: blog?.ogImage || ''
@@ -143,6 +149,236 @@ export default function BlogEditForm({ blog, categories, authors }: BlogEditForm
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Audio Upload & Preview states
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+  const [audioUploadProgress, setAudioUploadProgress] = useState<number | null>(null);
+  const [uploadedFileSize, setUploadedFileSize] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+  
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Client-safe Cloudinary publicId extractor
+  const getPublicIdFromUrl = (url: string): string | null => {
+    if (!url || !url.includes('cloudinary.com')) return null;
+    const videoParts = url.split(/\/video\/upload\/(?:v\d+\/)?/);
+    if (videoParts.length >= 2) {
+      const path = videoParts[1];
+      return path.substring(0, path.lastIndexOf('.')) || path;
+    }
+    const genericParts = url.split(/\/upload\/(?:v\d+\/)?/);
+    if (genericParts.length >= 2) {
+      const path = genericParts[1];
+      return path.substring(0, path.lastIndexOf('.')) || path;
+    }
+    return null;
+  };
+
+  // Fetch size of existing audio URL via a HEAD request
+  useEffect(() => {
+    if (formData.audioUrl) {
+      fetch(formData.audioUrl, { method: 'HEAD' })
+        .then((res) => {
+          const size = res.headers.get('content-length');
+          if (size) {
+            setUploadedFileSize(parseInt(size));
+          }
+        })
+        .catch((err) => console.error('Error fetching audio file size:', err));
+    }
+  }, [formData.audioUrl]);
+
+  // Audio Playback Preview State Sync
+  useEffect(() => {
+    const audio = previewAudioRef.current;
+    if (!audio) return;
+    
+    const handleEnded = () => setIsPreviewPlaying(false);
+    const handlePause = () => setIsPreviewPlaying(false);
+    const handlePlay = () => setIsPreviewPlaying(true);
+    
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('play', handlePlay);
+    
+    return () => {
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('play', handlePlay);
+    };
+  }, [formData.audioUrl]);
+
+  const togglePreviewPlay = () => {
+    if (!previewAudioRef.current) return;
+    if (isPreviewPlaying) {
+      previewAudioRef.current.pause();
+    } else {
+      previewAudioRef.current.play().catch(e => console.error('Preview audio play error:', e));
+    }
+  };
+
+  const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>, droppedFile?: File) => {
+    let file: File | undefined;
+    if (droppedFile) {
+      file = droppedFile;
+    } else if (e && 'target' in e && (e.target as HTMLInputElement).files) {
+      file = (e.target as HTMLInputElement).files?.[0];
+    }
+    
+    if (!file) return;
+
+    setErrorMsg('');
+
+    // Validations: mp3, wav, m4a
+    const filename = file.name.toLowerCase();
+    const isSupported = filename.endsWith('.mp3') || filename.endsWith('.wav') || filename.endsWith('.m4a');
+    if (!isSupported) {
+      setErrorMsg('Validation Error: Only .mp3, .wav, and .m4a audio files are allowed.');
+      return;
+    }
+
+    const MAX_SIZE = 100 * 1024 * 1024; // 100MB
+    if (file.size > MAX_SIZE) {
+      setErrorMsg('Validation Error: File size exceeds the maximum limit of 100MB.');
+      return;
+    }
+
+    setUploadingAudio(true);
+    setAudioUploadProgress(0);
+    setUploadedFileSize(file.size);
+
+    const form = new FormData();
+    form.append('file', file);
+
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        setAudioUploadProgress(percent);
+      }
+    });
+
+    xhr.onload = () => {
+      setUploadingAudio(false);
+      setAudioUploadProgress(null);
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          setFormData(prev => ({
+            ...prev,
+            audioUrl: data.secure_url,
+            audioDuration: Math.round(data.duration) || 0,
+            audioFileName: file!.name,
+            audioUploadedAt: new Date().toISOString(),
+            audioEnabled: true
+          }));
+          setSuccessMsg('Audio uploaded successfully to Cloudinary!');
+          setTimeout(() => setSuccessMsg(''), 3000);
+        } catch (err) {
+          setErrorMsg('Upload failed: Invalid response from server.');
+        }
+      } else {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          setErrorMsg(data.error || 'Upload failed.');
+        } catch {
+          setErrorMsg(`Upload failed with status code ${xhr.status}.`);
+        }
+      }
+    };
+
+    xhr.onerror = () => {
+      setUploadingAudio(false);
+      setAudioUploadProgress(null);
+      setErrorMsg('Network error occurred during upload.');
+    };
+
+    xhr.open('POST', '/api/admin/audio/upload');
+    xhr.send(form);
+  };
+
+  const handleRemoveAudio = async () => {
+    if (!formData.audioUrl) return;
+
+    if (!confirm('Are you sure you want to remove this audio file? This will delete it from Cloudinary.')) {
+      return;
+    }
+
+    const publicId = getPublicIdFromUrl(formData.audioUrl);
+    if (!publicId) {
+      // Just clear it locally if it can't parse public ID (e.g. invalid url)
+      setFormData(prev => ({
+        ...prev,
+        audioUrl: '',
+        audioDuration: 0,
+        audioFileName: '',
+        audioUploadedAt: null,
+        audioEnabled: false
+      }));
+      setUploadedFileSize(null);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/audio?publicId=${encodeURIComponent(publicId)}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete audio from Cloudinary');
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        audioUrl: '',
+        audioDuration: 0,
+        audioFileName: '',
+        audioUploadedAt: null,
+        audioEnabled: false
+      }));
+      setUploadedFileSize(null);
+      setSuccessMsg('Audio removed and deleted from Cloudinary successfully.');
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to remove audio.');
+    }
+  };
+
+  const formatDuration = (secs: number) => {
+    if (isNaN(secs) || secs === 0) return '0:00';
+    const minutes = Math.floor(secs / 60);
+    const seconds = Math.floor(secs % 60);
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
+
+  const formatSize = (bytes: number | null) => {
+    if (!bytes) return 'N/A';
+    if (bytes >= 1024 * 1024) {
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleAudioUpload(e, file);
+    }
+  };
 
   // Handle Title auto-slugification
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -777,6 +1013,161 @@ export default function BlogEditForm({ blog, categories, authors }: BlogEditForm
               className="w-full bg-background border border-border rounded-lg p-3 focus:outline-hidden focus:border-primary font-mono text-xs resize-none text-foreground"
             />
           </div>
+
+          {/* Audio Article Section */}
+          <div className="bg-background border border-border p-6 rounded-lg space-y-4">
+            <div className="flex justify-between items-center pb-2 border-b border-border">
+              <h3 className="text-xs uppercase font-extrabold tracking-widest text-muted flex items-center gap-1.5 font-sans select-none">
+                <Headphones className="h-4 w-4 text-primary" /> Audio Article
+              </h3>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-muted">
+                  {formData.audioEnabled ? 'Enable Audio' : 'Disable Audio'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleToggle('audioEnabled')}
+                  className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors cursor-pointer ${
+                    formData.audioEnabled ? 'bg-primary' : 'bg-border'
+                  }`}
+                  aria-label="Toggle Audio Player"
+                >
+                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-background transition-transform ${
+                    formData.audioEnabled ? 'translate-x-5' : 'translate-x-1'
+                  }`} />
+                </button>
+              </div>
+            </div>
+
+            {formData.audioUrl ? (
+              /* Audio Preview Card */
+              <div className="space-y-4 font-sans">
+                <div className="bg-surface/5 border border-border p-4 rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-foreground truncate max-w-[200px] sm:max-w-md">
+                        {formData.audioFileName || 'narrated_article.mp3'}
+                      </p>
+                      <p className="text-[10px] text-muted font-medium">
+                        Duration: {formatDuration(formData.audioDuration || 0)} &bull; Size: {formatSize(uploadedFileSize)}
+                      </p>
+                    </div>
+                    
+                    {/* Audio Preview Controls */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={togglePreviewPlay}
+                        className="h-8 w-8 bg-primary text-black rounded-full flex items-center justify-center hover:bg-primary-hover transition-colors cursor-pointer"
+                        title={isPreviewPlaying ? 'Pause Preview' : 'Play Preview'}
+                      >
+                        {isPreviewPlaying ? (
+                          <Pause className="h-4 w-4 fill-current" />
+                        ) : (
+                          <Play className="h-4 w-4 fill-current translate-x-0.5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Hidden audio element for preview */}
+                  <audio
+                    ref={previewAudioRef}
+                    src={formData.audioUrl}
+                    className="hidden"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <input
+                    type="file"
+                    id="audioReplaceInput"
+                    accept=".mp3,.wav,.m4a"
+                    onChange={handleAudioUpload}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="audioReplaceInput"
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-border hover:bg-surface text-xs font-bold rounded-lg cursor-pointer transition-colors"
+                  >
+                    <span>Replace Audio</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleRemoveAudio}
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-red-500/20 text-red-500 hover:bg-red-500/10 text-xs font-bold rounded-lg cursor-pointer transition-colors"
+                  >
+                    <span>Remove Audio</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Drag & Drop Upload Zone */
+              <div className="space-y-4">
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all ${
+                    isDragging
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                >
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <div className="h-10 w-10 bg-surface border border-border rounded-full flex items-center justify-center text-muted">
+                      {uploadingAudio ? (
+                        <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Upload className="h-5 w-5 stroke-[1.5]" />
+                      )}
+                    </div>
+                    
+                    {uploadingAudio ? (
+                      <div className="space-y-2 w-full max-w-xs">
+                        <p className="text-xs font-bold text-foreground">
+                          Uploading audio... {audioUploadProgress !== null ? `${audioUploadProgress}%` : ''}
+                        </p>
+                        <div className="w-full bg-border h-1 rounded-full overflow-hidden">
+                          <div
+                            className="bg-primary h-full transition-all duration-150"
+                            style={{ width: `${audioUploadProgress || 0}%` }}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-xs font-bold text-foreground">
+                          Drag and drop audio file here, or click to browse
+                        </p>
+                        <p className="text-[10px] text-muted font-medium">
+                          Supported Formats: MP3, WAV, M4A (Max 100 MB)
+                        </p>
+                      </>
+                    )}
+                  </div>
+                  
+                  {!uploadingAudio && (
+                    <input
+                      type="file"
+                      id="audioUploadInput"
+                      accept=".mp3,.wav,.m4a"
+                      onChange={handleAudioUpload}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full hidden"
+                    />
+                  )}
+                  
+                  {!uploadingAudio && (
+                    <label
+                      htmlFor="audioUploadInput"
+                      className="absolute inset-0 cursor-pointer"
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right Side: Toggles, Uploads, SEO Setup */}
@@ -910,51 +1301,7 @@ export default function BlogEditForm({ blog, categories, authors }: BlogEditForm
             </div>
           </div>
 
-          {/* Audio TTS generator widget */}
-          <div className="bg-background border border-border p-6 rounded-lg space-y-4">
-            <div className="flex justify-between items-center pb-2 border-b border-border">
-              <h3 className="text-xs uppercase font-extrabold tracking-widest text-muted flex items-center gap-1.5 select-none">
-                <Headphones className="h-4 w-4 text-primary" /> Audio Article
-              </h3>
-              <button
-                type="button"
-                onClick={handleGenerateAudio}
-                disabled={generatingAudio}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border border-border text-foreground hover:bg-surface transition-colors rounded-lg cursor-pointer disabled:opacity-40"
-              >
-                {generatingAudio ? 'Compiling...' : '⚡ Generate Speech'}
-              </button>
-            </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-bold text-foreground">Enable Audio Player</span>
-                <button
-                  type="button"
-                  onClick={() => handleToggle('audioEnabled')}
-                  className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors cursor-pointer ${
-                    formData.audioEnabled ? 'bg-primary' : 'bg-border'
-                  }`}
-                >
-                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-background transition-transform ${
-                    formData.audioEnabled ? 'translate-x-5' : 'translate-x-1'
-                  }`} />
-                </button>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Speech URL</label>
-                <input
-                  type="text"
-                  name="audioUrl"
-                  value={formData.audioUrl}
-                  onChange={handleInputChange}
-                  placeholder="Speech URL..."
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs focus:outline-hidden font-mono text-foreground"
-                />
-              </div>
-            </div>
-          </div>
 
           {/* Tags Setup */}
           <div className="bg-background border border-border p-6 rounded-lg space-y-4">

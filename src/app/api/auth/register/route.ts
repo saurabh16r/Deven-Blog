@@ -53,6 +53,8 @@ export async function POST(req: Request) {
       plan: 'free',
       subscriptionStatus: 'inactive',
       articlesRead: 0,
+      freeArticlesRead: 0,
+      readArticles: [],
       bookmarks: [],
     });
 

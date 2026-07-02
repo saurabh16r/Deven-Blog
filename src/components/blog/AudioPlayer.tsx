@@ -21,12 +21,38 @@ export default function AudioPlayer({ audioUrl, isPreviewOnly = false, isPremium
   const [isMuted, setIsMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [audioLocked, setAudioLocked] = useState(false);
+  const [volume, setVolume] = useState(1);
+
+  // Sync playback rate to audio element
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackRate;
+    }
+  }, [playbackRate]);
+
+  // Sync volume & mute to audio element
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+      audioRef.current.muted = isMuted;
+    }
+  }, [volume, isMuted]);
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseFloat(e.target.value);
+    setVolume(val);
+    if (val > 0) {
+      setIsMuted(false);
+    } else {
+      setIsMuted(true);
+    }
+  };
 
   const [fetchedUrl, setFetchedUrl] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Sync isPremium dynamically
-  const isPremium = initialPremium || (status === 'authenticated' && session?.user?.plan === 'premium');
+  const isPremium = initialPremium || (status === 'authenticated' && (session?.user?.plan === 'premium' || session?.user?.plan === 'pro'));
 
   useEffect(() => {
     if (isPremium && !audioUrl && !fetchedUrl && !loading && slug) {
@@ -104,10 +130,7 @@ export default function AudioPlayer({ audioUrl, isPreviewOnly = false, isPremium
   };
 
   const toggleMute = () => {
-    if (!audioRef.current) return;
-    const nextMute = !isMuted;
-    audioRef.current.muted = nextMute;
-    setIsMuted(nextMute);
+    setIsMuted(!isMuted);
   };
 
   const formatTime = (time: number) => {
@@ -119,52 +142,8 @@ export default function AudioPlayer({ audioUrl, isPreviewOnly = false, isPremium
 
   const speedOptions = [1, 1.25, 1.5, 2];
 
-  // Render Premium Upgrade Card for Free Users
-  if (!isPremium) {
-    return (
-      <div className="mb-8 w-full border border-primary/20 dark:border-[#2C2C2F] rounded-lg bg-[#1F1A17] dark:bg-[#181818] p-6 space-y-4 font-sans text-white">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center space-x-2.5">
-            <span className="text-base select-none">🎧</span>
-            <span className="font-serif font-black text-sm sm:text-base tracking-wide text-white">
-              Audio Article
-            </span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#FFC247] text-black">
-              👑 Premium
-            </span>
-          </div>
-          <div className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-neutral-800 border border-neutral-700 text-neutral-400 shrink-0 select-none">
-            <Lock className="h-3.5 w-3.5" />
-          </div>
-        </div>
-
-        <p className="text-xs text-neutral-300 leading-relaxed font-medium">
-          Listen to professionally narrated articles anywhere.
-        </p>
-
-        <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          {status === 'authenticated' ? (
-            <Link
-              href="/pricing"
-              className="inline-flex items-center justify-center px-4 py-2 bg-[#FFC247] text-black hover:bg-[#FFC247]/90 font-bold text-xs rounded-lg transition-colors cursor-pointer select-none"
-            >
-              Upgrade to Premium
-            </Link>
-          ) : (
-            <Link
-              href="/login?callbackUrl=/pricing"
-              className="inline-flex items-center justify-center px-4 py-2 bg-[#FFC247] text-black hover:bg-[#FFC247]/90 font-bold text-xs rounded-lg transition-colors cursor-pointer select-none"
-            >
-              Sign In & Upgrade
-            </Link>
-          )}
-          <span className="text-[10px] font-semibold text-neutral-400 select-none">
-            ₹299/month. Cancel anytime.
-          </span>
-        </div>
-      </div>
-    );
-  }
+  // If not premium, return null (PremiumReadingTools card handles visual locked state instead)
+  if (!isPremium) return null;
 
   const activeAudioUrl = audioUrl || fetchedUrl;
 
@@ -247,14 +226,26 @@ export default function AudioPlayer({ audioUrl, isPreviewOnly = false, isPremium
             </select>
           </div>
 
-          {/* Mute Button */}
-          <button
-            onClick={toggleMute}
-            className="text-neutral-400 dark:text-[#FAFAF9] hover:text-white transition-colors cursor-pointer"
-            aria-label={isMuted ? 'Unmute' : 'Mute'}
-          >
-            {isMuted ? <VolumeX className="h-4.5 w-4.5" /> : <Volume2 className="h-4.5 w-4.5" />}
-          </button>
+          {/* Mute Button & Volume Slider */}
+          <div className="flex items-center space-x-1.5">
+            <button
+              onClick={toggleMute}
+              className="text-neutral-400 dark:text-[#FAFAF9] hover:text-white transition-colors cursor-pointer"
+              aria-label={isMuted ? 'Unmute' : 'Mute'}
+            >
+              {isMuted || volume === 0 ? <VolumeX className="h-4.5 w-4.5" /> : <Volume2 className="h-4.5 w-4.5" />}
+            </button>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={isMuted ? 0 : volume}
+              onChange={handleVolumeChange}
+              className="w-16 h-[2px] bg-neutral-700 dark:bg-neutral-800 accent-primary rounded-lg cursor-pointer transition-all focus:outline-hidden"
+              aria-label="Volume"
+            />
+          </div>
         </div>
       </div>
 

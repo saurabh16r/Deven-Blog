@@ -10,11 +10,13 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailNotFound, setEmailNotFound] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setEmailNotFound(false);
     setLoading(true);
 
     try {
@@ -27,15 +29,18 @@ export default function ForgotPasswordPage() {
       const data = await res.json();
 
       if (!res.ok) {
+        if (res.status === 404 && data.code === 'EMAIL_NOT_FOUND') {
+          setEmailNotFound(true);
+        }
         throw new Error(data.error || 'Failed to request verification code.');
       }
 
-      setSuccess("If an account exists, we've sent a verification code.");
+      setSuccess(data.message || "✅ OTP sent successfully. We've sent a verification code to your email address.");
       setTimeout(() => {
         router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
-      }, 1500);
+      }, 2000);
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred. Please try again.');
+      setError(err.message || 'Something went wrong. Please try again in a few moments.');
     } finally {
       setLoading(false);
     }
@@ -68,7 +73,7 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
 
-        {error && (
+        {error && !emailNotFound && (
           <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold rounded text-center">
             {error}
           </div>
@@ -90,37 +95,67 @@ export default function ForgotPasswordPage() {
               type="email"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailNotFound) {
+                  setEmailNotFound(false);
+                  setError('');
+                }
+              }}
               placeholder="name@company.com"
               className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-foreground placeholder-muted/50 text-sm focus:outline-none focus:border-muted transition-colors"
             />
+            {emailNotFound && (
+              <div className="mt-3 text-xs font-medium text-red-600 dark:text-red-400 leading-relaxed border border-red-500/20 bg-red-500/5 rounded-lg p-3">
+                {error}
+              </div>
+            )}
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 px-4 bg-primary text-primary-foreground hover:bg-primary-hover font-bold text-sm tracking-wide rounded-lg transition-colors cursor-pointer flex items-center justify-center disabled:opacity-50"
-          >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <svg className="animate-spin h-4 w-4 text-primary-foreground" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                Sending...
-              </span>
-            ) : (
-              'Send Verification Code'
-            )}
-          </button>
+          {emailNotFound ? (
+            <div className="space-y-3 pt-1">
+              <Link
+                href="/signup"
+                className="w-full text-center block py-2.5 px-4 bg-[#FFC247] text-black hover:bg-[#FFC247]/90 font-bold text-sm tracking-wide rounded-lg transition-colors cursor-pointer"
+              >
+                Create Account
+              </Link>
+              <Link
+                href="/login"
+                className="w-full text-center block py-2.5 px-4 border border-border hover:bg-surface text-foreground font-bold text-sm tracking-wide rounded-lg transition-colors cursor-pointer"
+              >
+                Back to Login
+              </Link>
+            </div>
+          ) : (
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 px-4 bg-primary text-primary-foreground hover:bg-primary-hover font-bold text-sm tracking-wide rounded-lg transition-colors cursor-pointer flex items-center justify-center disabled:opacity-50"
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4 text-primary-foreground" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Checking...
+                </span>
+              ) : (
+                'Send OTP'
+              )}
+            </button>
+          )}
         </form>
 
         {/* Bottom Link */}
-        <div className="mt-8 pt-6 border-t border-border text-center text-xs font-medium text-muted">
-          <Link href="/login" className="text-foreground hover:underline font-bold transition-all">
-            Back to Login
-          </Link>
-        </div>
+        {!emailNotFound && (
+          <div className="mt-8 pt-6 border-t border-border text-center text-xs font-medium text-muted">
+            <Link href="/login" className="text-foreground hover:underline font-bold transition-all">
+              Back to Login
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

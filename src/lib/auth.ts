@@ -47,7 +47,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           image: user.image || '',
           role: user.role,
-          plan: user.plan,
+          plan: user.plan === 'pro' ? 'premium' : user.plan,
           subscriptionStatus: user.subscriptionStatus,
         };
       },
@@ -72,6 +72,8 @@ export const authOptions: NextAuthOptions = {
             plan: 'free',
             subscriptionStatus: 'inactive',
             articlesRead: 0,
+            freeArticlesRead: 0,
+            readArticles: [],
             bookmarks: [],
           });
         } else if (existingUser.provider !== 'google') {
@@ -86,7 +88,7 @@ export const authOptions: NextAuthOptions = {
         // Inject db details into the user object so it gets passed to jwt callback
         user.id = existingUser._id.toString();
         user.role = existingUser.role;
-        user.plan = existingUser.plan;
+        user.plan = existingUser.plan === 'pro' ? 'premium' : existingUser.plan;
         user.subscriptionStatus = existingUser.subscriptionStatus;
       }
       return true;
@@ -95,7 +97,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
-        token.plan = user.plan;
+        token.plan = user.plan === 'pro' ? 'premium' : user.plan;
         token.subscriptionStatus = user.subscriptionStatus;
       } else if (token.id) {
         // Retrieve fresh user info from DB on page transitions
@@ -104,7 +106,7 @@ export const authOptions: NextAuthOptions = {
           const latestUser = await User.findById(token.id).select('role plan subscriptionStatus').lean();
           if (latestUser) {
             token.role = latestUser.role;
-            token.plan = latestUser.plan;
+            token.plan = latestUser.plan === 'pro' ? 'premium' : latestUser.plan;
             token.subscriptionStatus = latestUser.subscriptionStatus;
           }
         } catch (error) {

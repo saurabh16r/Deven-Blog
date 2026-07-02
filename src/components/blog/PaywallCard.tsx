@@ -118,8 +118,8 @@ export default function PaywallCard({ slug, onPaymentSuccess }: PaywallCardProps
         </h3>
         <p className="text-xs text-muted font-medium max-w-sm mx-auto leading-relaxed">
           {isFreePlanUser
-            ? "You've reached your 2 free Deven articles. Upgrade to Deven Premium to continue reading this article and unlock unlimited founder insights."
-            : "You've reached your 2 free Deven articles. Continue reading this article instantly and unlock every founder briefing."}
+            ? "You've reached your 5 free FounderBrief articles. Upgrade to Premium to continue reading this article and unlock unlimited founder insights."
+            : "You've reached your 5 free FounderBrief articles. Continue reading this article instantly and unlock every founder briefing."}
         </p>
       </div>
 

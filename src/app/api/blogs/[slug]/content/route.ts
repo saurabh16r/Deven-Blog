@@ -21,7 +21,7 @@ export async function GET(
       return NextResponse.json({ error: 'User not found.' }, { status: 404 });
     }
 
-    if (user.plan !== 'premium') {
+    if (user.plan !== 'premium' && user.plan !== 'pro') {
       return NextResponse.json({ error: 'Premium subscription required.' }, { status: 403 });
     }
 

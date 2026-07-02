@@ -32,7 +32,7 @@ export default function ArticleContentClient({
 
   // Sync state if user is premium or becomes premium
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.plan === 'premium') {
+    if (status === 'authenticated' && (session?.user?.plan === 'premium' || session?.user?.plan === 'pro')) {
       if (isLocked) {
         unlockArticle();
       }
