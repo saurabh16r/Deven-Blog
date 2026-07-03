@@ -91,6 +91,15 @@ body {
   background: var(--muted);
 }
 
+/* Hide scrollbar utility */
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
 /* Clean Editorial Navbar classes (No Glassmorphism) */
 .editorial-navbar {
   background-color: var(--background);
