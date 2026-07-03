@@ -255,60 +255,36 @@ export default async function ArticleDetailPage({ params, searchParams }: PagePr
           </div>
 
           {/* Author Block Row */}
-          <div className="border-y border-border py-5 my-6 space-y-3 font-sans">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                {blog.authorId?.avatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={blog.authorId.avatar}
-                    alt={blog.authorId.name}
-                    className="h-11 w-11 rounded-full object-cover border border-border shrink-0"
-                  />
-                ) : (
-                  <div className="h-11 w-11 bg-primary text-black rounded-full flex items-center justify-center font-bold font-serif text-sm shrink-0 select-none">
-                    {blog.authorId?.name ? blog.authorId.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'A'}
-                  </div>
-                )}
-                <div>
-                  <p className="text-sm font-bold text-foreground">{blog.authorId?.name || 'Anonymous'}</p>
-                  <p className="text-[10px] font-bold text-muted uppercase tracking-wider">
-                    {blog.authorId?.role || 'Author'} • {formatDate(blog.createdAt)}
-                  </p>
+          <div className="border-y border-border/80 py-4.5 mt-6 mb-8 flex items-center justify-between font-sans">
+            <div className="flex items-center gap-4">
+              {blog.authorId?.avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={blog.authorId.avatar}
+                  alt={blog.authorId.name}
+                  className="h-[52px] w-[52px] rounded-full object-cover border border-border shrink-0 select-none"
+                />
+              ) : (
+                <div className="h-[52px] w-[52px] bg-primary/20 border border-primary/30 text-primary rounded-full flex items-center justify-center font-bold font-serif text-lg shrink-0 select-none">
+                  {blog.authorId?.name ? blog.authorId.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'A'}
                 </div>
-              </div>
-
-              {/* Top Share & Bookmark minimal buttons */}
-              <div className="flex items-center space-x-2">
-                <BookmarkButton articleId={blog._id} initialBookmarked={isBookmarked} />
+              )}
+              <div className="flex flex-col gap-1">
+                <span className="font-serif font-semibold text-[18px] text-foreground tracking-tight hover:text-primary transition-colors cursor-pointer leading-tight">
+                  {blog.authorId?.name || 'Anonymous'}
+                </span>
+                <p className="font-sans font-medium text-[13.5px] text-muted leading-none">
+                  <span className="uppercase tracking-wider">{blog.authorId?.role || 'Author'}</span>
+                  <span className="mx-1.5 text-muted/60">•</span>
+                  <span>{formatDate(blog.createdAt)}</span>
+                </p>
               </div>
             </div>
 
-            {blog.authorId?.bio && (
-              <p className="text-xs text-muted leading-relaxed max-w-xl font-medium">
-                {blog.authorId.bio}
-              </p>
-            )}
-
-            {(blog.authorId?.linkedin || blog.authorId?.twitter || blog.authorId?.website) && (
-              <div className="flex items-center space-x-3 pt-1 text-[10px] font-bold uppercase tracking-wider text-muted">
-                {blog.authorId.linkedin && (
-                  <a href={blog.authorId.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                    LinkedIn
-                  </a>
-                )}
-                {blog.authorId.twitter && (
-                  <a href={blog.authorId.twitter} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                    X (Twitter)
-                  </a>
-                )}
-                {blog.authorId.website && (
-                  <a href={blog.authorId.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                    Website
-                  </a>
-                )}
-              </div>
-            )}
+            {/* Bookmark Button */}
+            <div className="flex items-center">
+              <BookmarkButton articleId={blog._id} initialBookmarked={isBookmarked} premiumStyle={true} />
+            </div>
           </div>
 
           {/* Cover Image Block */}
@@ -353,6 +329,54 @@ export default async function ArticleDetailPage({ params, searchParams }: PagePr
 
           <HistoryTracker articleId={blog._id} slug={blog.slug} />
 
+
+          {/* About the Author Section */}
+          {blog.authorId?.bio && (
+            <div className="pt-8 border-t border-border mt-12 flex gap-5 items-start font-sans">
+              {blog.authorId.avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={blog.authorId.avatar}
+                  alt={blog.authorId.name}
+                  className="h-12 w-12 rounded-full object-cover border border-border shrink-0 select-none"
+                />
+              ) : (
+                <div className="h-12 w-12 bg-primary/20 border border-primary/30 text-primary rounded-full flex items-center justify-center font-bold font-serif text-sm shrink-0 select-none">
+                  {blog.authorId?.name ? blog.authorId.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'A'}
+                </div>
+              )}
+              <div className="space-y-2 min-w-0 flex-1">
+                <span className="text-[10px] font-bold text-primary uppercase tracking-widest block">
+                  Written by
+                </span>
+                <h4 className="font-serif font-black text-[18px] text-foreground leading-tight hover:text-primary transition-colors cursor-pointer">
+                  {blog.authorId.name}
+                </h4>
+                <p className="text-xs text-muted leading-relaxed font-medium">
+                  {blog.authorId.bio}
+                </p>
+                {(blog.authorId.linkedin || blog.authorId.twitter || blog.authorId.website) && (
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 text-[10px] font-bold uppercase tracking-wider text-muted/80">
+                    {blog.authorId.linkedin && (
+                      <a href={blog.authorId.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                        LinkedIn
+                      </a>
+                    )}
+                    {blog.authorId.twitter && (
+                      <a href={blog.authorId.twitter} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                        X (Twitter)
+                      </a>
+                    )}
+                    {blog.authorId.website && (
+                      <a href={blog.authorId.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                        Website
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Tag Badges Footer */}
           {blog.tags && blog.tags.length > 0 && (
