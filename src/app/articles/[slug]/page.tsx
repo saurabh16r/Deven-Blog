@@ -132,7 +132,6 @@ export default async function ArticleDetailPage({ params, searchParams }: PagePr
             } catch (err) {
               console.error('Error migrating read slugs:', err);
             }
-            cookieStore.delete('fb_read_slugs');
           }
 
           // Check if current article is already read

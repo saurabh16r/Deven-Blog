@@ -12,6 +12,13 @@ export default function HistoryTracker({ articleId, slug }: HistoryTrackerProps)
   const { status } = useSession();
   const lastLoggedPercent = useRef<number>(0);
   
+  // Clear visitor read slugs cookie when user logs in (becomes authenticated)
+  useEffect(() => {
+    if (status === 'authenticated') {
+      document.cookie = 'fb_read_slugs=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    }
+  }, [status]);
+  
   // Track read slugs client-side for visitors
   useEffect(() => {
     if (status === 'unauthenticated') {
