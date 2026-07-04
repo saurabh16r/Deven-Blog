@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
-import { signOut } from 'next-auth/react';
+import React, { useState, useRef } from 'react';
+import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { Camera, Loader2 } from 'lucide-react';
+import ImageCropperModal from '@/components/profile/ImageCropperModal';
 
 interface UserInfo {
   name: string;
@@ -13,6 +15,9 @@ interface UserInfo {
 
 export default function SettingsClient({ initialUser }: { initialUser: UserInfo }) {
   const router = useRouter();
+  const { update: updateSession } = useSession();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [name, setName] = useState(initialUser.name);
   const [image, setImage] = useState(initialUser.image);
   const [password, setPassword] = useState('');
@@ -22,6 +27,162 @@ export default function SettingsClient({ initialUser }: { initialUser: UserInfo 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Profile Image Upload & Crop States
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState('');
+  const [avatarMessage, setAvatarMessage] = useState('');
+
+  const getInitials = (nameStr: string) => {
+    if (!nameStr) return 'FB';
+    return nameStr
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadError('');
+    setAvatarMessage('');
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError('Unsupported Format. Please select a JPG, JPEG, PNG, or WEBP image.');
+      if (e.target) e.target.value = '';
+      return;
+    }
+
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_SIZE) {
+      setUploadError('Image Too Large. The maximum allowed size is 5 MB.');
+      if (e.target) e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setCropperOpen(true);
+    };
+    reader.readAsDataURL(file);
+    if (e.target) e.target.value = '';
+  };
+
+  const handleCropSave = (croppedBlob: Blob) => {
+    setCropperOpen(false);
+    setUploading(true);
+    setUploadProgress(0);
+    setUploadError('');
+    setAvatarMessage('');
+
+    const form = new FormData();
+    form.append('file', croppedBlob, 'profile.jpg');
+
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        setUploadProgress(percent);
+      }
+    });
+
+    xhr.onload = async () => {
+      setUploading(false);
+      setUploadProgress(0);
+
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          const secureUrl = data.url;
+          
+          // Immediately update MongoDB via profile endpoint
+          const res = await fetch('/api/profile', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name,
+              image: secureUrl,
+            }),
+          });
+
+          if (res.ok) {
+            setImage(secureUrl);
+            setAvatarMessage('Profile picture updated successfully.');
+            // Update client session state instantly
+            await updateSession({ image: secureUrl });
+            router.refresh();
+          } else {
+            const errData = await res.json();
+            setUploadError(errData.error || 'Failed to update profile settings.');
+          }
+        } catch (err) {
+          setUploadError('Upload failed: Invalid response from server.');
+        }
+      } else {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          setUploadError(data.error || 'Upload Failed. Please try again.');
+        } catch {
+          setUploadError(`Upload Failed with status code ${xhr.status}.`);
+        }
+      }
+    };
+
+    xhr.onerror = () => {
+      setUploading(false);
+      setUploadProgress(0);
+      setUploadError('Network Error. Please check your connection.');
+    };
+
+    xhr.open('POST', '/api/profile/upload');
+    xhr.send(form);
+  };
+
+  const handleRemovePhoto = async () => {
+    if (!confirm('Are you sure you want to remove your profile picture?')) return;
+
+    setUploading(true);
+    setUploadError('');
+    setAvatarMessage('');
+
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          image: '', // clear photo
+        }),
+      });
+
+      if (res.ok) {
+        setImage('');
+        setAvatarMessage('Profile picture removed successfully.');
+        await updateSession({ image: '' });
+        router.refresh();
+      } else {
+        const errData = await res.json();
+        setUploadError(errData.error || 'Failed to remove profile picture.');
+      }
+    } catch (err) {
+      setUploadError('An error occurred. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +223,8 @@ export default function SettingsClient({ initialUser }: { initialUser: UserInfo 
         setSuccess('Profile updated successfully.');
         setPassword('');
         setConfirmPassword('');
+        // Sync updates to local session state
+        await updateSession({ name, image });
         router.refresh();
       }
     } catch (err) {
@@ -123,25 +286,90 @@ export default function SettingsClient({ initialUser }: { initialUser: UserInfo 
       <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
         {/* Profile Picture */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-1.5" htmlFor="image-url">
-            Profile Picture URL
+          <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-3">
+            Profile Picture
           </label>
-          <div className="flex gap-4 items-center">
-            <div className="h-12 w-12 rounded-full border border-border bg-surface shrink-0 overflow-hidden flex items-center justify-center font-serif text-sm font-bold">
-              {image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={image} alt="" className="object-cover h-full w-full" />
-              ) : (
-                name.charAt(0).toUpperCase()
+          <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start">
+            {/* Interactive Avatar Container */}
+            <div className="relative group shrink-0">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                aria-label="Upload profile picture"
+                className="h-28 w-28 rounded-full border-2 border-border bg-surface overflow-hidden flex items-center justify-center font-serif text-3xl font-bold relative focus:outline-none focus-visible:ring-4 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all cursor-pointer group-hover:border-muted select-none"
+              >
+                {image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={image} alt="Current avatar" className="object-cover h-full w-full transition-all group-hover:scale-105" />
+                ) : (
+                  <span className="text-foreground/80">{getInitials(name)}</span>
+                )}
+                
+                {/* Hover overlay on desktop */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-200 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 text-white gap-1 select-none">
+                  <Camera className="h-5 w-5 stroke-[2] drop-shadow-sm" />
+                  <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-center drop-shadow-sm leading-none">Change<br/>Photo</span>
+                </div>
+
+                {/* Uploading progress spinner/overlay */}
+                {uploading && (
+                  <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center text-foreground gap-1.5 z-20">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    <span className="text-[9px] font-sans font-extrabold uppercase tracking-widest">{uploadProgress}%</span>
+                  </div>
+                )}
+              </button>
+            </div>
+
+            {/* Actions & Description */}
+            <div className="flex flex-col justify-center gap-1.5 text-center sm:text-left h-auto sm:h-28">
+              <div className="flex items-center justify-center sm:justify-start gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="px-4 py-2 bg-surface border border-border hover:border-muted text-foreground text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap disabled:opacity-50"
+                >
+                  Change Photo
+                </button>
+                {image && (
+                  <button
+                    type="button"
+                    onClick={handleRemovePhoto}
+                    disabled={uploading}
+                    className="px-4 py-2 border border-red-500/20 hover:border-red-500/35 hover:bg-red-500/5 text-red-600 dark:text-red-400 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap disabled:opacity-50"
+                  >
+                    Remove Photo
+                  </button>
+                )}
+              </div>
+              <p className="text-[10px] text-muted font-medium mt-1 leading-relaxed max-w-xs">
+                Supports JPG, JPEG, PNG, or WEBP files. Maximum size: 5 MB. Circular crop is applied automatically.
+              </p>
+              
+              {/* Validation/Upload Errors */}
+              {uploadError && (
+                <p className="text-red-600 dark:text-red-400 text-xs font-semibold mt-1">
+                  {uploadError}
+                </p>
+              )}
+              {/* Success messages specific to avatar */}
+              {avatarMessage && (
+                <p className="text-green-600 dark:text-green-400 text-xs font-semibold mt-1">
+                  {avatarMessage}
+                </p>
               )}
             </div>
+
+            {/* Hidden Native File Input */}
             <input
-              id="image-url"
-              type="text"
-              value={image}
-              onChange={(e) => setImage(e.target.value)}
-              placeholder="https://example.com/avatar.jpg"
-              className="flex-grow px-3 py-2 bg-surface border border-border rounded-lg text-foreground placeholder-muted/50 text-sm focus:outline-none focus:border-muted transition-colors"
+              ref={fileInputRef}
+              type="file"
+              accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+              onChange={handleFileChange}
+              className="hidden"
+              aria-hidden="true"
             />
           </div>
         </div>
@@ -227,10 +455,10 @@ export default function SettingsClient({ initialUser }: { initialUser: UserInfo 
         <div className="pt-4 flex items-center justify-between">
           <button
             type="submit"
-            disabled={loading}
-            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-hover font-bold text-sm tracking-wide rounded-lg transition-colors cursor-pointer"
+            disabled={loading || uploading}
+            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-hover font-bold text-sm tracking-wide rounded-lg transition-colors cursor-pointer disabled:opacity-50"
           >
-            {loading ? 'Saving...' : 'Save Changes'}
+            {loading ? 'Saving...' : uploading ? 'Uploading...' : 'Save Changes'}
           </button>
           
           <button
@@ -288,6 +516,15 @@ export default function SettingsClient({ initialUser }: { initialUser: UserInfo 
           )}
         </div>
       </div>
+
+      {cropperOpen && (
+        <ImageCropperModal
+          isOpen={cropperOpen}
+          imageSrc={selectedImage}
+          onCancel={() => setCropperOpen(false)}
+          onSave={handleCropSave}
+        />
+      )}
     </div>
   );
 }

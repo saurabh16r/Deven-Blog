@@ -16,14 +16,14 @@ if (isConfigured) {
   });
 }
 
-export async function uploadImage(fileUri: string): Promise<string> {
+export async function uploadImage(fileUri: string, folder: string = 'founderbrief'): Promise<string> {
   if (!isConfigured) {
     throw new Error('Cloudinary credentials are not configured. Please check CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.');
   }
   
   try {
     const result = await cloudinary.uploader.upload(fileUri, {
-      folder: 'founderbrief',
+      folder: folder,
     });
     return result.secure_url;
   } catch (error) {

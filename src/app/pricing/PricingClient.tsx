@@ -15,6 +15,16 @@ export default function PricingClient() {
 
   const monthlyPlan = pricingConfig.plans.monthly;
 
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleUpgrade = async () => {
     if (status !== 'authenticated') {
       router.push('/login?callbackUrl=/pricing');
@@ -26,29 +36,92 @@ export default function PricingClient() {
     setSuccess('');
 
     try {
-      const res = await fetch('/api/subscribe', {
+      // 1. Load Razorpay script
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        setError('Failed to load Razorpay payment SDK. Please check your internet connection.');
+        setLoading(false);
+        return;
+      }
+
+      // 2. Initiate order creation on backend
+      const orderRes = await fetch('/api/subscribe/order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
-      const data = await res.json();
+      const orderData = await orderRes.json();
 
-      if (!res.ok) {
-        setError(data.error || 'Upgrade failed. Please try again.');
-      } else {
-        setSuccess('Thank you! You are now a Premium Member.');
-        // Refresh session token so the header badge updates
-        await update();
-        router.refresh();
-        setTimeout(() => {
-          router.push('/profile');
-        }, 1500);
+      if (!orderRes.ok) {
+        setError(orderData.error || 'Failed to initiate order. Please try again.');
+        setLoading(false);
+        return;
       }
+
+      // 3. Configure Razorpay checkout options
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Deven Premium',
+        description: 'Monthly premium subscription for founder briefings',
+        order_id: orderData.orderId,
+        prefill: {
+          name: orderData.user.name,
+          email: orderData.user.email,
+        },
+        theme: {
+          color: '#FFC247', // matching Deven primary yellow theme
+        },
+        handler: async function (response: any) {
+          setLoading(true);
+          try {
+            // 4. Verify payment signature on backend
+            const verifyRes = await fetch('/api/subscribe/verify', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (!verifyRes.ok) {
+              setError(verifyData.error || 'Payment verification failed.');
+            } else {
+              setSuccess('Thank you! Your payment was verified and account upgraded successfully.');
+              // Refresh session token so header badges/access updates
+              await update();
+              router.refresh();
+              setTimeout(() => {
+                router.push('/profile');
+              }, 1500);
+            }
+          } catch (err) {
+            setError('An error occurred during payment verification.');
+          } finally {
+            setLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setLoading(false);
+          }
+        }
+      };
+
+      const paymentObject = new (window as any).Razorpay(options);
+      paymentObject.open();
+
     } catch (err) {
       setError('An error occurred during payment processing.');
-    } finally {
       setLoading(false);
     }
   };

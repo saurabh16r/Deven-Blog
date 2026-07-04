@@ -93,26 +93,37 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
         token.plan = user.plan === 'pro' ? 'premium' : user.plan;
         token.subscriptionStatus = user.subscriptionStatus;
+        token.name = user.name;
+        token.picture = user.image || '';
       } else if (token.id) {
         // Retrieve fresh user info from DB on page transitions
         try {
           await connectDB();
-          const latestUser = await User.findById(token.id).select('role plan subscriptionStatus').lean();
+          const latestUser = await User.findById(token.id).select('name role plan subscriptionStatus image').lean();
           if (latestUser) {
             token.role = latestUser.role;
             token.plan = latestUser.plan === 'pro' ? 'premium' : latestUser.plan;
             token.subscriptionStatus = latestUser.subscriptionStatus;
+            token.name = latestUser.name;
+            token.picture = latestUser.image || '';
           }
         } catch (error) {
           console.error('Error fetching user for JWT update:', error);
         }
       }
+
+      // Handle session update triggers from client
+      if (trigger === 'update' && session) {
+        if (session.name) token.name = session.name;
+        if (session.image !== undefined) token.picture = session.image;
+      }
+
       return token;
     },
     async session({ session, token }) {
@@ -121,6 +132,8 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role;
         session.user.plan = token.plan;
         session.user.subscriptionStatus = token.subscriptionStatus;
+        if (token.name) session.user.name = token.name;
+        if (token.picture !== undefined) session.user.image = token.picture;
       }
       return session;
     },
